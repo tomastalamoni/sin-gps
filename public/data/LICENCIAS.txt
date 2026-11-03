@@ -1,0 +1,11 @@
+Datos de Sin GPS
+
+Calles, alturas, sentidos y barrios: Buenos Aires Data (GCBA), licencia CC-BY-2.5-AR.
+https://data.buenosaires.gob.ar/
+
+Semáforos, restricciones de giro, hitos, vías del tren, agua y parques, y el cruce de sentidos:
+© OpenStreetMap contributors, licencia ODbL 1.0. https://www.openstreetmap.org/copyright
+Los archivos que mezclan datos de OpenStreetMap son una base de datos derivada y se ofrecen
+bajo la ODbL, con el crédito a Buenos Aires Data.
+
+Tipografía del mapa: Noto Sans, SIL Open Font License 1.1 (fonts/OFL.txt).
