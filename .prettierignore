@@ -1,0 +1,16 @@
+# Generados (index.html lleva un <link> por línea por pantalla de carga, de npm run icons)
+index.html
+dist
+dev-dist
+coverage
+test-results
+playwright-report
+package-lock.json
+
+# Datos y binarios: salen del pipeline o de descargas fijadas
+public/data
+public/fonts
+pipeline/raw
+
+# La especificación se edita a mano, tal como la escribió Tomás
+docs/PLAN.md

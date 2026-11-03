@@ -1,0 +1,27 @@
+# Dependencias y builds
+node_modules/
+dist/
+dev-dist/
+*.tsbuildinfo
+
+# Tests
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Descargas del pipeline (pesadas, se regeneran con data:download)
+pipeline/raw/
+
+# Entorno local
+.env
+.env.*
+*.local
+*.log
+.claude/settings.local.json
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

@@ -1,0 +1,8 @@
+/*
+ * Botones de MapLibre (zoom y brújula) a 48 px, la zona de toque mínima de la app.
+ * Se importa después de maplibre-gl.css, así que con la misma especificidad gana esta regla.
+ */
+.maplibregl-ctrl-group button {
+  width: 48px;
+  height: 48px;
+}

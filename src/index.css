@@ -1,0 +1,54 @@
+@import 'tailwindcss';
+
+/*
+ * Colores por función, no por tono: los componentes usan bg-page, text-ink, bg-brand, etc.
+ * El modo oscuro solo cambia las variables, así ningún componente repite variantes dark:.
+ * Cada par de texto y fondo cumple contraste AA.
+ */
+@theme {
+  --color-page: #f8fafc;
+  --color-surface: #ffffff;
+  --color-ink: #0f172a;
+  --color-muted: #475569;
+  --color-line: #cbd5e1;
+  --color-brand: #0f766e;
+  --color-on-brand: #ffffff;
+  --color-ok: #166534;
+  --color-warn: #92400e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-page: #0b1220;
+    --color-surface: #111a2e;
+    --color-ink: #e2e8f0;
+    --color-muted: #94a3b8;
+    --color-line: #334155;
+    --color-brand: #2dd4bf;
+    --color-on-brand: #042f2e;
+    --color-ok: #86efac;
+    --color-warn: #fcd34d;
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-page text-ink antialiased;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+}
+
+/* Respeta "reducir movimiento" del celular. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
