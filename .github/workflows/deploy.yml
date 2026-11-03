@@ -3,6 +3,9 @@ name: Deploy
 on:
   push:
     branches: [main]
+    # Un cambio que toca solo documentación no publica: cada deploy le muestra al celular
+    # el aviso de versión nueva. Para forzarlo está workflow_dispatch.
+    paths-ignore: ['**/*.md', 'docs/**']
   workflow_dispatch:
 
 permissions:

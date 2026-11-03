@@ -4,7 +4,8 @@ PWA offline para aprender las calles, sentidos y alturas del norte de CABA (Reti
 
 ## Estado
 
-- Fase actual: 0 · Base.
+- Fase actual: 0 · Base, esperando la prueba de Tomás en el iPhone.
+- Publicada en https://tomastalamoni.github.io/sin-gps/ (repo tomastalamoni/sin-gps). Cada push a main pasa la CI y se publica solo, salvo los cambios que tocan únicamente documentación.
 
 ## Comandos
 
