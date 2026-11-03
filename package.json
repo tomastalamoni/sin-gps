@@ -17,7 +17,11 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "icons": "pwa-assets-generator",
-    "fonts": "tsx scripts/fetch-glyphs.ts"
+    "fonts": "tsx scripts/fetch-glyphs.ts",
+    "data:download": "tsx pipeline/01-download.ts",
+    "data:build": "tsx pipeline/build.ts",
+    "data:validate": "tsx pipeline/validate.ts",
+    "data:update": "tsx pipeline/update.ts"
   },
   "dependencies": {
     "maplibre-gl": "6.16.0",
@@ -31,16 +35,21 @@
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.64.1",
     "@tailwindcss/vite": "4.3.3",
+    "@turf/turf": "7.4.0",
     "@types/node": "26.6.6",
+    "@types/papaparse": "5.5.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "@types/wellknown": "0.5.8",
     "@vite-pwa/assets-generator": "2.0.0",
     "@vitejs/plugin-react": "6.2.1",
     "eslint": "10.14.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-react-refresh": "0.5.7",
+    "fast-check": "4.10.2",
     "globals": "17.14.0",
+    "papaparse": "5.7.0",
     "prettier": "3.9.10",
     "prettier-plugin-tailwindcss": "0.8.1",
     "tailwindcss": "4.3.3",
@@ -49,6 +58,7 @@
     "typescript-eslint": "8.72.1",
     "vite": "8.3.5",
     "vite-plugin-pwa": "2.0.0",
-    "vitest": "5.1.0"
+    "vitest": "5.1.0",
+    "wellknown": "0.5.0"
   }
 }

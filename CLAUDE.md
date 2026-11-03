@@ -5,7 +5,8 @@ PWA offline para aprender las calles, sentidos y alturas del norte de CABA (Reti
 ## Estado
 
 - Fase 0 · Base: cerrada el 3/11/2026 (Tomás la instaló en el iPhone y anduvo en modo avión).
-- Fase actual: 1 · Datos, grafo y Explorar (en planificación).
+- Fase actual: 1 · Datos, grafo y Explorar. Bloque A (pipeline, motor y reporte) hecho; esperando el visto bueno de Tomás sobre el reporte antes del bloque B (Explorar).
+- Decisiones de la Fase 1 (3/11/2026): el Barrio 31 queda fuera del mapa; sin Wikidata por ahora (no se muestra el origen del nombre).
 - Publicada en https://tomastalamoni.github.io/sin-gps/ (repo tomastalamoni/sin-gps). Cada push a main pasa la CI y se publica solo, salvo los cambios que tocan únicamente documentación.
 
 ## Comandos
@@ -13,13 +14,29 @@ PWA offline para aprender las calles, sentidos y alturas del norte de CABA (Reti
 - npm run dev | build | preview
 - npm run typecheck | lint | test | test:e2e
 - npm run format (Prettier) | icons (íconos y pantallas de carga desde public/logo.svg) | fonts (glyphs del mapa)
-- npm run data:download | data:build | data:validate | data:update (desde la Fase 1)
+- npm run data:download (fuentes con fecha en pipeline/raw; `-- --refresh` para volver a bajar) | data:build (pasos 2 a 13; si falla una validación bloqueante no escribe public/data y deja el reporte en pipeline/raw/reporte-ultimo.md) | data:validate (sobre public/data, como la CI) | data:update
 
 ## Entorno
 
 - Node 26.13.0 (.nvmrc; ts-fsrs 6 pide 24 o más). TypeScript 6.0.3: typescript-eslint todavía no soporta TS 7.
 - En Git Bash (Windows), `BASE_PATH=/sin-gps/` se convierte en una ruta de disco: anteponer `MSYS_NO_PATHCONV=1`.
 - test:e2e compila con la base /sin-gps/ y prueba en Chromium (390×844 y 360×800) y en WebKit. Las capturas para la revisión visual quedan en test-results/capturas.
+- Overpass y BA Data rechazan pedidos sin User-Agent; el pipeline se identifica, reintenta y prueba otro servidor (pipeline/config.ts).
+
+## Datos (lo que no está en el plan)
+
+- El formato de public/data está en src/engine/data.ts y se lee con src/engine/load.ts: el pipeline valida lo mismo que lee la app.
+- El callejero trae valores que la sección 8 no lista (PEATONAL, SENDERO, AUTOPISTA y ramas, PUENTE, TÚNEL…): su tratamiento está en pipeline/03-clip.ts y en el reporte.
+- Los cruces con OSM ignoran Metrobús, veredas y ciclovías; un tramo es peatonal solo si OSM lo marca `pedestrian` o escalera.
+- Las restricciones de giro se validan contra la geometría; las obligatorias exigen reconocer las dos vías, y se descartan las que dejan una esquina sin salida.
+- Lugones y Cantilo son autopista en OSM: quedan como barrera, fuera del Navegante, hasta la Fase 5 (como dice el plan).
+- Un tramo sin alturas toma el sentido de OSM solo si las vías de OSM corren paralelas; si mide menos de 20 m, además tiene que confirmarlo una cuadra vecina de la misma calle.
+- Los tramos de sentido se ordenan por la numeración. Un tramo sin alturas que corre al lado de una cuadra va como ella; si no, sigue a su vecino. Si no queda claro (una rama), no se pregunta.
+- Un tramo de sentido no mezcla cuadras que se pueden preguntar con cuadras dudosas o de la zona de borde: se corta ahí, para que una cuadra dudosa no deje sin preguntar al resto de la calle.
+- Dos calzadas con las mismas alturas, sentidos opuestos y lado a lado (hasta 150 m) se preguntan juntas como doble mano, aunque el emparejado de 40 m no las una. Las laterales de mano única al lado de una doble mano, y las cuadras que se contradicen sin correr lado a lado, no se preguntan y van al reporte.
+- Pasar a la otra calzada de una avenida en la misma esquina cuenta como vuelta en U (sección 5): la salida corre a menos de 30 m de la cuadra por la que llegaste.
+- Los patrones de sentido (public/data/patrones.json, de src/engine/patterns.ts) son grupos de 4 o más paralelas que alternan a lo largo de 2 transversales o más, solo con tramos que se pueden preguntar. Se enseñan en la Fase 4.
+- El archivo de cambios se calcula contra los datos del último commit (git HEAD) y compara las tarjetas de sentido por geometría, no por ID. Cada versión nueva lleva su archivo, aunque esté vacío. `inherit` va de la ID nueva a la vieja.
 
 ## Reglas
 
@@ -31,7 +48,7 @@ PWA offline para aprender las calles, sentidos y alturas del norte de CABA (Reti
 - Cada pregunta declara su visibilidad (etiquetas, flechas, capa de dominio) y un test la verifica: nunca se ve la respuesta.
 - ts-fsrs con versión exacta, envuelto en src/engine/srs. Dominio = "días hasta el 90%" calculado con el scheduler, nunca el campo stability crudo.
 - Toda aleatoriedad usa semilla, para poder reproducir errores.
-- URLs siempre con import.meta.env.BASE_URL. El precache incluye json, pbf, png, svg y webmanifest.
+- URLs siempre con import.meta.env.BASE_URL. El precache incluye json, pbf, png, svg y webmanifest (también txt y md, que viven en public/data y public/fonts).
 - UI en español rioplatense (voseo), con textos cortos.
 - Identificadores en inglés, como los módulos del plan (graph, router, MapView); comentarios y textos de la UI en español.
 - Celular primero: probar en 390×844 y 360×800, con zonas de toque de 48 px o más.

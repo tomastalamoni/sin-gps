@@ -60,6 +60,8 @@ export default defineConfig([
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
+      // Choca con no-non-null-assertion (modo estricto): preferimos el cast explícito `as T`.
+      '@typescript-eslint/non-nullable-type-assertion-style': 'off',
     },
   },
   {

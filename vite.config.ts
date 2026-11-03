@@ -73,7 +73,7 @@ export default defineConfig({
       workbox: {
         // Todo lo que la app necesita sin internet: código, datos, glyphs, íconos y licencias.
         // El manifiesto (webmanifest) lo agrega el plugin por su cuenta.
-        globPatterns: ['**/*.{js,mjs,css,html,json,pbf,png,svg,ico,txt}'],
+        globPatterns: ['**/*.{js,mjs,css,html,json,pbf,png,svg,ico,txt,md}'],
         // Las pantallas de carga las baja el iPhone al instalar la app; después no se piden.
         globIgnores: ['**/apple-splash-*.png'],
         // Workbox saltea sin fallar lo que supera este tamaño: un test e2e controla que no falte nada.

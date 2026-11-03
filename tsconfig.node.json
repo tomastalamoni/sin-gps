@@ -5,7 +5,7 @@
     "lib": ["ES2023"],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "types": ["node"],
+    "types": ["node", "geojson"],
     "noEmit": true,
     "skipLibCheck": true,
     "allowImportingTsExtensions": true,
@@ -27,6 +27,8 @@
     "vitest.config.ts",
     "playwright.config.ts",
     "pwa-assets.config.ts",
-    "scripts"
+    "scripts",
+    "pipeline",
+    "tests/data"
   ]
 }
