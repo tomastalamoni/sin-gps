@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { isAskableConfidence, type StreetRecord } from '../../engine/data';
 import type { LngLat } from '../../engine/geo';
+import { cardIds } from '../../engine/ids';
 import type { AppData } from '../../lib/data';
+import { isStandalone } from '../../lib/platform';
+import { refreshStudy, useStudy } from '../../lib/study';
+import { updateSettings } from '../../storage/progress';
 import { BottomSheet } from '../../ui/BottomSheet';
 import { ReportSheet } from '../report/ReportSheet';
 import {
@@ -12,7 +16,7 @@ import {
   stretchHeights,
   streetViewUrl,
   trustText,
-} from './describe';
+} from '../../engine/describe';
 import { useExplore, type Selection } from './store';
 
 const actionClass =
@@ -85,6 +89,26 @@ function Crossings({ street, data }: { street: StreetRecord; data: AppData }) {
   );
 }
 
+/** Adelanta la calle en la cola de lecciones. Solo si todavía no se estudió. */
+function StudyNow({ street }: { street: StreetRecord }) {
+  const study = useStudy();
+  if (!street.askable || study.cards.has(cardIds.name(street.code))) return null;
+  const { priority } = study.settings;
+  const queued = priority.includes(street.code);
+  return (
+    <button
+      type="button"
+      disabled={queued}
+      className="min-h-12 basis-full rounded-xl bg-brand px-4 font-semibold text-on-brand active:opacity-80 disabled:opacity-60"
+      onClick={() => {
+        void updateSettings({ priority: [street.code, ...priority] }).then(refreshStudy);
+      }}
+    >
+      {queued ? 'Va primera en la cola' : 'Estudiar ahora'}
+    </button>
+  );
+}
+
 function StreetDetails({
   data,
   selection,
@@ -120,6 +144,7 @@ function StreetDetails({
       }}
       footer={
         <>
+          {isStandalone() && <StudyNow street={street} />}
           <StreetViewLink point={point} />
           <button
             type="button"

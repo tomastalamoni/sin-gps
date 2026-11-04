@@ -16,7 +16,11 @@ export interface LandmarkOverride {
   exclude?: boolean;
   include?: boolean;
   name?: string;
+  /** Hito mayor: se enseña en el nivel 0 (sección 3). */
+  major?: boolean;
 }
+
+type Bbox = NonNullable<LandmarkRecord['bbox']>;
 
 const ACCESS_M = 150;
 const AVENUE_NEAR_M = 100;
@@ -28,25 +32,33 @@ const QUOTAS: Record<string, number> = {
   tren: Infinity,
   estadio: Infinity,
   aeropuerto: Infinity,
+  planetario: Infinity,
+  cementerio: Infinity,
   hospital: 15,
   shopping: 10,
   universidad: 12,
-  museo: 15,
-  monumento: 8,
-  plaza: 40,
+  museo: 16,
+  monumento: 10,
+  plaza: 46,
 };
 
 function categoryOf(tags: Record<string, string>): string | undefined {
+  // Una estación proyectada o en obra todavía no es una referencia: no existe.
+  if (tags.railway === 'proposed' || tags.railway === 'construction') return undefined;
   if (tags.railway === 'station') return tags.station === 'subway' ? 'subte' : 'tren';
   if (tags.station === 'subway') return 'subte';
   if (tags.amenity === 'hospital') return 'hospital';
-  if (tags.leisure === 'stadium') return 'estadio';
+  if (tags.amenity === 'planetarium') return 'planetario';
+  if (tags.landuse === 'cemetery') return 'cementerio';
+  if (tags.leisure === 'stadium' || tags.sport === 'horse_racing' || tags.sport === 'polo')
+    return 'estadio';
   if (tags.shop === 'mall') return 'shopping';
   if (tags.amenity === 'university') return 'universidad';
-  if (tags.tourism === 'museum') return 'museo';
+  if (tags.tourism === 'museum' || tags.amenity === 'library') return 'museo';
   if (tags.aeroway === 'aerodrome') return 'aeropuerto';
-  if (tags.historic === 'monument') return 'monumento';
-  if (tags.leisure === 'park' || tags.place === 'square') return 'plaza';
+  if (tags.historic === 'monument' || tags.tourism === 'artwork') return 'monumento';
+  if (tags.leisure === 'park' || tags.leisure === 'garden' || tags.place === 'square')
+    return 'plaza';
   return undefined;
 }
 
@@ -82,6 +94,7 @@ export function selectLandmarks(
     name: string;
     category: string;
     point: LngLat;
+    bounds: [number, number, number, number] | undefined;
     score: number;
   }
   const candidates: Candidate[] = [];
@@ -93,7 +106,7 @@ export function selectLandmarks(
     const size = areaM2(feature.bounds);
     const nearAvenue = near(feature.point, AVENUE_NEAR_M).some((x) => segments[x.t]?.kind === 'a');
     const score = Math.log10(1 + size) + (feature.tags.wikidata ? 1 : 0) + (nearAvenue ? 0.5 : 0);
-    candidates.push({ name, category, point: feature.point, score });
+    candidates.push({ name, category, point: feature.point, bounds: feature.bounds, score });
   }
 
   // Una estación mapeada como nodo y como edificio es un solo hito.
@@ -108,7 +121,9 @@ export function selectLandmarks(
     if (!dup) unique.push(c);
   }
 
-  const chosen: Candidate[] = [];
+  const chosen: (Candidate & { major: boolean })[] = [];
+  // Dos hitos pueden llamarse igual: el mayor es el de más puntaje.
+  const majors = new Set<string>();
   const taken = new Map<string, number>();
   for (const c of unique) {
     const slug = slugify(c.name);
@@ -117,7 +132,9 @@ export function selectLandmarks(
     const used = taken.get(c.category) ?? 0;
     if (used >= (QUOTAS[c.category] ?? 0) && !override?.include) continue;
     taken.set(c.category, used + 1);
-    chosen.push({ ...c, name: override?.name ?? c.name });
+    const major = override?.major === true && !majors.has(slug);
+    if (major) majors.add(slug);
+    chosen.push({ ...c, name: override?.name ?? c.name, major });
   }
 
   const slugs = new Set<string>();
@@ -145,6 +162,8 @@ export function selectLandmarks(
       lng: Math.round(c.point[0] * 1e6) / 1e6,
       lat: Math.round(c.point[1] * 1e6) / 1e6,
       access,
+      ...(c.major ? { major: true } : {}),
+      ...(c.bounds ? { bbox: c.bounds.map((n) => Math.round(n * 1e6) / 1e6) as Bbox } : {}),
     };
   });
   return { landmarks, candidates: candidates.length, withoutAccess };

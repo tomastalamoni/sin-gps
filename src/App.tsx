@@ -13,6 +13,12 @@ const ExploreScreen = lazy(() =>
 const VerifyScreen = lazy(() =>
   import('./features/verify/VerifyScreen').then((m) => ({ default: m.VerifyScreen })),
 );
+const SessionScreen = lazy(() =>
+  import('./features/session/SessionScreen').then((m) => ({ default: m.SessionScreen })),
+);
+const OnboardingScreen = lazy(() =>
+  import('./features/onboarding/OnboardingScreen').then((m) => ({ default: m.OnboardingScreen })),
+);
 const DiagnosticsScreen = lazy(() =>
   import('./features/diagnostics/DiagnosticsScreen').then((m) => ({
     default: m.DiagnosticsScreen,
@@ -45,6 +51,16 @@ function Screens() {
         <Route path="/mapa/:view?">
           <Suspense fallback={<LoadingScreen />}>
             <ExploreScreen />
+          </Suspense>
+        </Route>
+        <Route path="/sesion">
+          <Suspense fallback={<LoadingScreen />}>
+            <SessionScreen />
+          </Suspense>
+        </Route>
+        <Route path="/bienvenida">
+          <Suspense fallback={<LoadingScreen />}>
+            <OnboardingScreen />
           </Suspense>
         </Route>
         <Route path="/verificar">

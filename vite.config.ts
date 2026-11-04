@@ -77,7 +77,7 @@ export default defineConfig({
         // Las pantallas de carga las baja el iPhone al instalar la app; después no se piden.
         globIgnores: ['**/apple-splash-*.png'],
         // Workbox saltea sin fallar lo que supera este tamaño: un test e2e controla que no falte nada.
-        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        maximumFileSizeToCacheInBytes: 1024 * 1024 * 1024,
         cleanupOutdatedCaches: true,
         // Al instalarse por primera vez, el service worker toma la página abierta. Sin esto, la app
         // que sigue en memoria en el iPhone pediría el mapa a la red aunque ya esté todo guardado.

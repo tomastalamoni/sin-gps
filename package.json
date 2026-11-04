@@ -21,13 +21,15 @@
     "data:download": "tsx pipeline/01-download.ts",
     "data:build": "tsx pipeline/build.ts",
     "data:validate": "tsx pipeline/validate.ts",
-    "data:update": "tsx pipeline/update.ts"
+    "data:update": "tsx pipeline/update.ts",
+    "data:load": "tsx scripts/simulate-load.ts"
   },
   "dependencies": {
     "dexie": "4.4.7",
     "maplibre-gl": "6.16.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
+    "ts-fsrs": "6.0.0",
     "workbox-window": "7.4.1",
     "wouter": "3.13.0",
     "zustand": "5.0.16"

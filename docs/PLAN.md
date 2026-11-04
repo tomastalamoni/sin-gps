@@ -446,7 +446,7 @@ Barrios activos y barrio base · calles nuevas por día · retención deseada ·
 | Calcular una ruta | Menos de 50 ms |
 | Generar una pregunta | Menos de 30 ms |
 | Mapa | Fluido en un celular de gama media |
-| Peso total con datos | Menos de 5 MB |
+| Peso total con datos | Hasta 1 GB. Cuanto menos, mejor, pero nunca se recorta algo útil por peso (decidido el 4/11/2026) |
 
 ## 8. Datos
 
@@ -493,7 +493,7 @@ La fuente principal es el callejero oficial de la Ciudad (BA Data), que trae cua
    - Cruces de vías desde OSM (puente, túnel o paso a nivel); los tramos bajo un viaducto no son barrera.
    - Patrones: grupos de paralelas que alternan sentido, para enseñarlos como regla.
    - Origen del nombre, solo desde la etiqueta `name:etymology:wikidata` de OSM.
-10. **Hitos:** candidatos de OSM por categoría (estaciones de tren y subte, hospitales, plazas y parques con nombre, estadios, shoppings, universidades, museos grandes, Aeroparque, monumentos). Se eligen unos 150 por tamaño, tipo y cercanía a avenidas. En `pipeline/hitos-override.json` cada hito tiene un `slug` fijo y su `acceso`: de 1 a 3 cuadras manejables a menos de 150 m. Sin acceso, no es destino del Navegante.
+10. **Hitos:** candidatos de OSM por categoría (estaciones de tren y subte en servicio, hospitales, plazas, parques y jardines con nombre, estadios, hipódromo y polo, shoppings, universidades, museos grandes, Biblioteca Nacional, Planetario, cementerios, Aeroparque, monumentos y obras con Wikidata). Los unos 15 hitos mayores del nivel 0 se marcan con `major`. Se eligen unos 150 por tamaño, tipo y cercanía a avenidas. En `pipeline/hitos-override.json` cada hito tiene un `slug` fijo y su `acceso`: de 1 a 3 cuadras manejables a menos de 150 m. Sin acceso, no es destino del Navegante.
 11. **IDs estables y cambios:**
     - IDs tipadas: `N:código` (nombre), `S:código:alturas` (sentido), `A:código:mil` (alturas), `T:código:dirección:primer cruce` (transversales), `B:barrera:tramo` (cruce), `H:slug` (hito) y `Z:barrio` (barrio).
     - Cada regeneración produce `cambios-{versión anterior}-{nueva}.json`. Un tramo que conserva su sentido mantiene el estado de su tarjeta aunque cambie su rango de alturas; uno que cambió de sentido reinicia su tarjeta y genera una lección "cambió".

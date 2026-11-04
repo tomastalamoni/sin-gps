@@ -43,6 +43,9 @@ export const TOLERANCES = {
   rumboDeadZoneDeg: 10,
 } as const;
 
+/** Terminal de los trenes del norte: los ramales se ordenan desde acá. */
+export const RAIL_TERMINAL = { name: 'Retiro', point: [-58.3745, -34.5905] } as const;
+
 export const IMPORTANCE = { routes: 20_000, seed: 20_261_103 } as const;
 
 export const VALIDATION = {

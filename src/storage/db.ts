@@ -5,6 +5,11 @@
 import { Dexie, type Table } from 'dexie';
 import type { TrackPoint } from '../engine/corrections';
 import type { Direction } from '../engine/data';
+import type { CardId } from '../engine/ids';
+import type { QuizMode } from '../engine/quiz/types';
+import type { StudyCard } from '../engine/srs/cards';
+import type { Day } from '../engine/srs/days';
+import { DEFAULT_RETENTION, type Grade, type MemoryRevlog } from '../engine/srs/scheduler';
 
 export interface MetaRow {
   key: string;
@@ -34,15 +39,108 @@ export interface OverrideRow {
   point?: [number, number];
 }
 
+/** Cada revisión: lo que devuelve ts-fsrs, más el tiempo de respuesta y el modo (sección 9). */
+export interface ReviewRow {
+  id?: number;
+  card: CardId;
+  day: Day;
+  grade: Grade;
+  correct: boolean;
+  elapsedMs: number;
+  mode: QuizMode;
+  /** La semilla de la pregunta: alcanza para reproducirla. */
+  seed: number;
+  revlog: MemoryRevlog;
+}
+
+/** Un par de calles confundidas. */
+export interface ConfusionRow {
+  /** "menor-mayor": el par no tiene orden. */
+  pair: string;
+  a: number;
+  b: number;
+  count: number;
+  lastDay: Day;
+}
+
+/** Lo que pasó cada día: alcanza para la meta, la racha y las estadísticas. */
+export interface DayRow {
+  day: Day;
+  /** Respuestas que calificaron una tarjeta. */
+  reviews: number;
+  /** De esas, las que estrenaron una tarjeta: no cuentan para el tope de repasos. */
+  fresh?: number;
+  correct: number;
+  lessons: number;
+  /** Tiempo respondiendo, en milisegundos. */
+  ms: number;
+}
+
+export type ThemeSetting = 'system' | 'light' | 'dark';
+
+export interface AppSettings {
+  /** Ya pasó por el primer uso. */
+  onboarded: boolean;
+  /** Barrio base (Z:barrio). */
+  base?: string;
+  /** Barrios activos (Z:barrio). Sin lista, los nueve. */
+  active?: string[];
+  /** Foco: un barrio que va adelante (Z:barrio). */
+  focus?: string;
+  newPerDay: number;
+  retention: number;
+  /** Calles adelantadas con "Estudiar ahora". */
+  priority: number[];
+  /** Lecciones sin tarjetas que ya se vieron. */
+  seen: string[];
+  theme: ThemeSetting;
+  /** Tamaño del texto: 1 es el normal. */
+  textScale: number;
+  reduceMotion: boolean;
+  sound: boolean;
+  vibration: boolean;
+}
+
+export const DEFAULT_SETTINGS: AppSettings = {
+  onboarded: false,
+  newPerDay: 4,
+  retention: DEFAULT_RETENTION,
+  priority: [],
+  seen: [],
+  theme: 'system',
+  textScale: 1,
+  reduceMotion: false,
+  sound: true,
+  vibration: true,
+};
+
+export interface SettingsRow {
+  key: 'app';
+  value: AppSettings;
+}
+
 const DATABASE_NAME = 'sin-gps';
 
 export class Database extends Dexie {
   declare overrides: Table<OverrideRow, number>;
   declare meta: Table<MetaRow, string>;
+  declare cards: Table<StudyCard, string>;
+  declare reviews: Table<ReviewRow, number>;
+  declare confusions: Table<ConfusionRow, string>;
+  declare days: Table<DayRow, string>;
+  declare settings: Table<SettingsRow, string>;
 
   constructor(name = DATABASE_NAME) {
     super(name);
     this.version(1).stores({ overrides: '++id, street, stretch', meta: 'key' });
+    // Solo suma tablas: lo que ya había queda como estaba.
+    this.version(2).stores({
+      cards: 'id, dueDay',
+      reviews: '++id, card, day',
+      confusions: 'pair, a, b',
+      days: 'day',
+      settings: 'key',
+    });
   }
 }
 

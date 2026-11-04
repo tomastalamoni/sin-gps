@@ -5,7 +5,7 @@ import type { LngLat } from '../../engine/geo';
 import type { AppData } from '../../lib/data';
 import type { ReportKind } from '../../storage/db';
 import { BottomSheet } from '../../ui/BottomSheet';
-import { stretchHeights } from '../explore/describe';
+import { stretchHeights } from '../../engine/describe';
 import { correctDirection, correctName, directionOptions, saveNote } from './actions';
 
 const KINDS: { kind: ReportKind; label: string }[] = [

@@ -8,8 +8,11 @@ import type { Direction, DirectionStretch, StreetRecord } from '../../engine/dat
 import { angleDiff, bearingDeg, distanceM, type LngLat } from '../../engine/geo';
 import type { RoadGraph } from '../../engine/graph';
 import { TurnTable } from '../../engine/turns';
+import { cardIds } from '../../engine/ids';
 import { refreshData, type AppData } from '../../lib/data';
+import { refreshStudy } from '../../lib/study';
 import { db, type OverrideRow, type ReportKind } from '../../storage/db';
+import { resetCard } from '../../storage/progress';
 
 function trapsOf(graph: RoadGraph): Set<number> {
   return trapEdges(analyzeConnectivity(graph, new TurnTable(graph)));
@@ -55,7 +58,10 @@ export async function correctDirection(data: AppData, report: DirectionReport): 
     await db.overrides.where('stretch').equals(stretch).delete();
     await db.overrides.add(row);
   });
+  // Un dato corregido reinicia su tarjeta (sección 6).
+  await resetCard(stretch);
   const updated = await refreshData();
+  await refreshStudy();
   return newTraps(data.graph, updated.graph);
 }
 
@@ -72,7 +78,9 @@ export async function correctName(
     name,
     ...(note ? { note } : {}),
   });
+  await resetCard(cardIds.name(street));
   await refreshData();
+  await refreshStudy();
 }
 
 /** Lo que no se puede corregir solo: una calle que falta u otra cosa. */

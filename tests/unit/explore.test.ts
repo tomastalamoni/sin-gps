@@ -10,7 +10,7 @@ import {
   sentenceCase,
   stretchHeights,
   streetViewUrl,
-} from '../../src/features/explore/describe';
+} from '../../src/engine/describe';
 import { joinSections } from '../../src/map/sources';
 
 const at = (x: number, y: number): LngLat => [-58.45 + x / 91_800, -34.58 + y / 111_000];

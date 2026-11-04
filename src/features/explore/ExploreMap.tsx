@@ -17,7 +17,7 @@ import {
   type LayerGroup,
   type Theme,
 } from '../../map/style';
-import { nearestSegment } from './describe';
+import { nearestSegment } from '../../engine/describe';
 import { useExplore, type CameraRequest, type Selection } from './store';
 
 /** Radio del toque sobre un hito, en píxeles. */
@@ -97,7 +97,7 @@ export function ExploreMap({ data, camera, className }: ExploreMapProps) {
       mapRef.current = map;
       const onStyle = () => {
         const colors = PALETTE[theme()];
-        addIcons(map, { arrow: colors.arrow, doubtful: colors.doubtful, halo: colors.halo });
+        addIcons(map, colors);
         applyState(map);
       };
       const onClick = (event: MapMouseEvent) => {

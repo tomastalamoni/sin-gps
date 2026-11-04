@@ -8,7 +8,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { AddressBook } from '../src/engine/addresses';
-import type { LandmarksFile, SegmentsFile, StreetsFile } from '../src/engine/data';
+import type { LandmarksFile, RailFile, SegmentsFile, StreetsFile } from '../src/engine/data';
 import type { LngLat } from '../src/engine/geo';
 import { computeNumbering, orientRows } from './02-numbering';
 import { clip } from './03-clip';
@@ -16,7 +16,7 @@ import { orient } from './04-orient';
 import { buildGraph } from './05-graph';
 import type { NameOverride } from './06-names';
 import { enrich } from './07-osm-enrich';
-import { exportData } from './08-export';
+import { barrierCards, exportData } from './08-export';
 import { OUT_DIR, RAW_DIR } from './config';
 import { parseCallejero } from './lib/callejero';
 import type { DataSnapshot } from './lib/changes';
@@ -59,13 +59,16 @@ function previousSnapshot(): DataSnapshot | undefined {
   const segments = published('tramos.json') as SegmentsFile | undefined;
   const landmarks = published('hitos.json') as LandmarksFile | undefined;
   const barrios = published('barrios.json') as GeoJSON.FeatureCollection | undefined;
-  if (!streets || !segments || !landmarks || !barrios) return undefined;
+  const rail = published('vias.json') as RailFile | undefined;
+  const barriers = published('barreras.json') as GeoJSON.FeatureCollection | undefined;
+  if (!streets || !segments || !landmarks || !barrios || !rail || !barriers) return undefined;
   return {
     version: streets.version,
     streets: streets.streets,
     segments,
     landmarks: landmarks.landmarks,
     barrios: barrios.features.map((f) => String(f.properties?.id)),
+    barriers: barrierCards(rail, barriers),
   };
 }
 
@@ -136,7 +139,11 @@ async function main(): Promise<void> {
   ]);
 
   const previous = previousSnapshot();
+  const tracked = execFileSync('git', ['ls-files', OUT_DIR], { encoding: 'utf8' }).split('\n');
   const result = exportData({
+    changeFiles: tracked
+      .map((path) => path.slice(OUT_DIR.length + 1))
+      .filter((name) => name.startsWith('cambios-')),
     model,
     build: graph,
     clip: clipped,
@@ -160,7 +167,6 @@ async function main(): Promise<void> {
   }
   await mkdir(OUT_DIR, { recursive: true });
   // Los archivos de cambios sin commitear son de builds anteriores que no se publicaron.
-  const tracked = execFileSync('git', ['ls-files', OUT_DIR], { encoding: 'utf8' }).split('\n');
   for (const name of await readdir(OUT_DIR)) {
     if (name.startsWith('cambios-') && !tracked.includes(`${OUT_DIR}/${name}`))
       await rm(join(OUT_DIR, name));

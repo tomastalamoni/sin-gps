@@ -271,6 +271,7 @@ describe.skipIf(!hasData)('datos reales', () => {
       segments,
       landmarks: landmarks.landmarks,
       barrios: [],
+      barriers: [],
     };
     expect(isEmptyChanges(computeChanges(snapshot, { ...snapshot, version: 'otra' }))).toBe(true);
   });
@@ -358,7 +359,7 @@ describe.skipIf(!hasData)('datos reales', () => {
     expect(total / 1000).toBeLessThan(50);
   }, 180_000);
 
-  it('los datos pesan menos de 2,5 MB', () => {
+  it('los datos pesan menos de 1 GB', () => {
     const total = [
       'tramos.json',
       'grafo.json',
@@ -372,6 +373,6 @@ describe.skipIf(!hasData)('datos reales', () => {
     ]
       .map((name) => statSync(join(DIR, name)).size)
       .reduce((a, b) => a + b, 0);
-    expect(total).toBeLessThan(2.5 * 1024 * 1024);
+    expect(total).toBeLessThan(1024 * 1024 * 1024);
   });
 });

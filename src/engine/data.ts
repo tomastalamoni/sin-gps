@@ -189,6 +189,10 @@ export interface LandmarkRecord {
   lat: number;
   /** Tramos manejables a menos de 150 m: sin acceso, no es destino del Navegante. */
   access: number[];
+  /** Hito mayor: se enseña en el nivel 0. */
+  major?: boolean;
+  /** Oeste, sur, este y norte, si ocupa un lugar: tocar adentro también es acertar. */
+  bbox?: [number, number, number, number];
 }
 
 export interface LandmarksFile {
@@ -199,9 +203,33 @@ export interface LandmarksFile {
 
 export interface RailCrossing {
   street: number;
+  /** viaducto: las vías pasan por arriba · tunel: la calle pasa por abajo · puente: por arriba. */
   kind: 'nivel' | 'puente' | 'tunel' | 'viaducto';
   lng: number;
   lat: number;
+  /** Se supuso a nivel sin que OSM lo confirme: se dibuja, pero no se pregunta. */
+  unconfirmed?: boolean;
+}
+
+/** Un ramal: sus cruces en orden, desde la terminal hacia afuera. */
+export interface RailBranch {
+  /** Índices en `crossings` de la línea. */
+  crossings: number[];
+}
+
+/** Tramo de las vías entre dos avenidas seguidas: una tarjeta de cruce. */
+export interface RailStretch {
+  /** ID de la tarjeta (B:línea:avenida-avenida). */
+  id: string;
+  /** Índice en `branches` de la línea. */
+  branch: number;
+  /** Las avenidas que lo limitan, desde la terminal hacia afuera. */
+  from: number;
+  to: number;
+  /** Calles que cruzan entre las dos avenidas, en orden (índices en `crossings` de la línea). */
+  crossings: number[];
+  /** Calles que llegan a las vías en ese tramo y no cruzan esta línea en ningún lado. */
+  closed: { street: number; lng: number; lat: number }[];
 }
 
 export interface RailLine {
@@ -209,6 +237,8 @@ export interface RailLine {
   name: string;
   geometry: number[][];
   crossings: RailCrossing[];
+  branches: RailBranch[];
+  stretches: RailStretch[];
 }
 
 export interface RailFile {
@@ -217,6 +247,39 @@ export interface RailFile {
   lines: RailLine[];
   /** Vías sin nombre (ramales y playas): se dibujan, pero no se preguntan. */
   unnamed: number[][];
+  /** Hacia dónde llevan los ramales, para decir "yendo hacia…". */
+  terminal: string;
+}
+
+/**
+ * Archivo de cambios entre dos versiones de los datos (sección 8, paso 11). La app lo aplica al
+ * actualizar los datos y al importar un respaldo viejo.
+ */
+export interface ChangesFile {
+  from: string;
+  to: string;
+  /** ID nueva → ID vieja de la que toma el estado. */
+  inherit: Record<string, string>;
+  /** Tarjetas que empiezan de cero. */
+  reset: string[];
+  /** Tarjetas que ya no existen. */
+  removed: string[];
+  /** Tarjetas nuevas, sin estado previo. */
+  added: string[];
+  /**
+   * Tarjetas que cambiaron de sentido. La lección "cambió" espera a que `askable` sea verdadero: un
+   * tramo que quedó dudoso se reinicia, pero todavía no se enseña.
+   */
+  directionChanges: {
+    id: string;
+    /** La tarjeta vieja: la lección es para quien la sabía. */
+    was: string;
+    street: number;
+    from: Direction;
+    to: Direction;
+    askable: boolean;
+  }[];
+  renamed: { street: number; from: string; to: string }[];
 }
 
 export interface MetaFile {
@@ -230,6 +293,17 @@ export interface MetaFile {
   counts: Record<string, number>;
   /** Peso de cada archivo, en bytes. */
   files: Record<string, number>;
+  /** Todos los archivos de cambios: la app los encadena desde la versión que tiene. */
+  changes: string[];
+}
+
+/** Cuánto tiempo por día pide cada opción de calles nuevas, según la simulación (sección 10). */
+export interface LoadFile {
+  seed: number;
+  days: number;
+  /** Segundos de un ítem y de la ficha de una lección. */
+  seconds: { perItem: number; perLesson: number };
+  options: { newPerDay: number; minutes: number; peakMinutes: number }[];
 }
 
 const SCALE = 1e6;

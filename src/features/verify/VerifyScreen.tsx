@@ -3,7 +3,12 @@ import { Link } from 'wouter';
 import type { Direction } from '../../engine/data';
 import { useData, type AppData } from '../../lib/data';
 import { shareOrDownload } from '../../lib/files';
-import { CONFIDENCE_TEXT, pointOfStreet, stretchHeights, streetViewUrl } from '../explore/describe';
+import {
+  CONFIDENCE_TEXT,
+  pointOfStreet,
+  stretchHeights,
+  streetViewUrl,
+} from '../../engine/describe';
 import { buildOverridesFile, correctDirection, directionOptions } from '../report/actions';
 import { pendingStretches, type PendingStretch } from './list';
 

@@ -13,6 +13,7 @@
  */
 import {
   decodeLine,
+  type ChangesFile,
   type Direction,
   type DirectionStretch,
   type LandmarkRecord,
@@ -37,32 +38,11 @@ export interface DataSnapshot {
   segments: Pick<SegmentsFile, 'dir' | 'geometry'>;
   landmarks: readonly LandmarkRecord[];
   barrios: readonly string[];
+  /** Las tarjetas de cruce y de autopista (B:). */
+  barriers: readonly string[];
 }
 
-export interface ChangesFile {
-  from: string;
-  to: string;
-  /** ID nueva → ID vieja de la que toma el estado. */
-  inherit: Record<string, string>;
-  /** Tarjetas que empiezan de cero. */
-  reset: string[];
-  /** Tarjetas que ya no existen. */
-  removed: string[];
-  /** Tarjetas nuevas, sin estado previo. */
-  added: string[];
-  /**
-   * Tarjetas que cambiaron de sentido. La lección "cambió" espera a que `askable` sea verdadero: un
-   * tramo que quedó dudoso se reinicia, pero todavía no se enseña.
-   */
-  directionChanges: {
-    id: string;
-    street: number;
-    from: Direction;
-    to: Direction;
-    askable: boolean;
-  }[];
-  renamed: { street: number; from: string; to: string }[];
-}
+export type { ChangesFile };
 
 /** Puntos de cada cuadra que se comparan, como fracción de su largo. */
 const SAMPLES = [0.1, 0.3, 0.5, 0.7, 0.9];
@@ -157,6 +137,7 @@ function compareStretches(
       changes.reset.push(stretch.id);
       changes.directionChanges.push({
         id: stretch.id,
+        was: changedFrom.id,
         street: code,
         from: changedFrom.dir,
         to: stretch.dir,
@@ -221,12 +202,13 @@ export function computeChanges(previous: DataSnapshot, next: DataSnapshot): Chan
     );
   }
 
-  // Hitos y barrios: por ID.
+  // Hitos, barrios y barreras: por ID.
   compareIds(
     previous.landmarks.map((l) => l.id),
     next.landmarks.map((l) => l.id),
     changes,
   );
   compareIds(previous.barrios, next.barrios, changes);
+  compareIds(previous.barriers, next.barriers, changes);
   return changes;
 }

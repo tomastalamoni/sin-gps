@@ -4,11 +4,14 @@
  */
 import { use, useSyncExternalStore } from 'react';
 import { AddressBook } from '../engine/addresses';
+import { barrioInfos, type BarrioInfo } from '../engine/barrios';
 import { applyCorrections } from '../engine/corrections';
 import {
+  type ChangesFile,
   type GraphFile,
   type LandmarkRecord,
   type LandmarksFile,
+  type LoadFile,
   type MetaFile,
   type RailFile,
   type SegmentsFile,
@@ -16,8 +19,12 @@ import {
   type StreetsFile,
 } from '../engine/data';
 import { RoadGraph } from '../engine/graph';
+import type { CardId } from '../engine/ids';
+import { barrierCardsOf } from '../engine/lessons';
 import { checkFormat, graphInputFromFiles } from '../engine/load';
 import { db, type OverrideRow } from '../storage/db';
+import { syncCards } from '../storage/progress';
+import { logError } from './errors';
 import { assetUrl } from './urls';
 
 export interface AppData {
@@ -30,6 +37,11 @@ export interface AppData {
   background: GeoJSON.FeatureCollection;
   barriers: GeoJSON.FeatureCollection;
   barrios: GeoJSON.FeatureCollection;
+  barrioList: BarrioInfo[];
+  /** Las tarjetas de autopista. */
+  barrierCards: CardId[];
+  /** Cuánto tiempo por día pide cada opción de calles nuevas. */
+  load: LoadFile;
   meta: MetaFile;
   addresses: AddressBook;
   overrides: OverrideRow[];
@@ -46,6 +58,7 @@ interface Files {
   background: GeoJSON.FeatureCollection;
   barriers: GeoJSON.FeatureCollection;
   barrios: GeoJSON.FeatureCollection;
+  load: LoadFile;
   meta: MetaFile;
 }
 
@@ -59,7 +72,7 @@ async function fetchJson<T>(name: string): Promise<T> {
 }
 
 async function fetchFiles(): Promise<Files> {
-  const [segments, graph, streets, landmarks, rail, background, barriers, barrios, meta] =
+  const [segments, graph, streets, landmarks, rail, background, barriers, barrios, load, meta] =
     await Promise.all([
       fetchJson<SegmentsFile>('tramos.json'),
       fetchJson<GraphFile>('grafo.json'),
@@ -69,12 +82,13 @@ async function fetchFiles(): Promise<Files> {
       fetchJson<GeoJSON.FeatureCollection>('fondo.json'),
       fetchJson<GeoJSON.FeatureCollection>('barreras.json'),
       fetchJson<GeoJSON.FeatureCollection>('barrios.json'),
+      fetchJson<LoadFile>('carga.json'),
       fetchJson<MetaFile>('meta.json'),
     ]);
   checkFormat(streets, 'calles.json');
   checkFormat(landmarks, 'hitos.json');
   checkFormat(rail, 'vias.json');
-  return { segments, graph, streets, landmarks, rail, background, barriers, barrios, meta };
+  return { segments, graph, streets, landmarks, rail, background, barriers, barrios, load, meta };
 }
 
 function assemble(files: Files, overrides: OverrideRow[]): AppData {
@@ -102,6 +116,9 @@ function assemble(files: Files, overrides: OverrideRow[]): AppData {
     background: files.background,
     barriers: files.barriers,
     barrios: files.barrios,
+    barrioList: barrioInfos(files.barrios),
+    barrierCards: barrierCardsOf(files.barriers),
+    load: files.load,
     meta: files.meta,
     addresses: new AddressBook(graph, segments.heights, streets, landmarks),
     overrides,
@@ -179,6 +196,13 @@ export function loadData(): Promise<AppData> {
     const loaded = await fetchFiles();
     files = loaded;
     current = assemble(loaded, await readOverrides(loaded));
+    // Sin esto la app sigue andando: se reintenta la próxima vez que abra.
+    await syncCards({
+      version: loaded.meta.version,
+      files: loaded.meta.changes,
+      fetchChanges: (file) => fetchJson<ChangesFile>(file),
+      streets: current.streets,
+    }).catch((error: unknown) => logError(error, 'actualizar tarjetas'));
     return current;
   })();
   return loading;

@@ -55,7 +55,7 @@ export function BottomSheet({ title, onClose, children, footer, full = false }: 
         </button>
       </header>
       {children && <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-3">{children}</div>}
-      {footer && <div className="flex gap-2 border-t border-line p-2">{footer}</div>}
+      {footer && <div className="flex flex-wrap gap-2 border-t border-line p-2">{footer}</div>}
     </section>
   );
 }

@@ -1,4 +1,4 @@
-# Reporte de datos · 2026-11-03.040f74aa
+# Reporte de datos · 2026-11-03.67a91f03
 
 Generado el 2026-11-04 con el callejero de BA Data y OpenStreetMap.
 
@@ -28,14 +28,14 @@ Generado el 2026-11-04 con el callejero de BA Data y OpenStreetMap.
 | grafo.json | 108 |
 | calles.json | 841 |
 | patrones.json | 12 |
-| hitos.json | 26 |
-| vias.json | 40 |
-| barreras.json | 61 |
-| fondo.json | 222 |
+| hitos.json | 33 |
+| vias.json | 47 |
+| barreras.json | 63 |
+| fondo.json | 223 |
 | barrios.json | 33 |
 | LICENCIAS.txt | 1 |
-| cambios-2026-11-03.e001b1ac-2026-11-03.040f74aa.json | 0 |
-| **Total** | **1959** |
+| cambios-2026-11-03.040f74aa-2026-11-03.67a91f03.json | 2 |
+| **Total** | **1977** |
 
 ## Conectividad y trampas
 
@@ -343,31 +343,38 @@ Grupos de paralelas que alternan sentido, de 4 o más, a lo largo de 2 transvers
 
 ## Hitos
 
-155 elegidos de 580 candidatos dentro del área; 9 sin acceso (no son destino del Navegante).
+155 elegidos de 641 candidatos dentro del área; 10 sin acceso (no son destino del Navegante).
 
-- plaza: 40
-- subte: 33
+- plaza: 46
+- subte: 20
 - tren: 18
-- museo: 15
+- museo: 16
 - hospital: 15
 - universidad: 12
 - shopping: 10
-- monumento: 8
-- estadio: 3
+- monumento: 10
+- estadio: 5
 - aeropuerto: 1
+- cementerio: 1
+- planetario: 1
 
 ## Vías del tren
 
 - FC San Martín: 25 cruces (viaducto 25)
+  - 1 ramales, 7 tarjetas de cruce, 0 cruces sin confirmar
 - FC Urquiza: 0 cruces (ninguno)
+  - 1 ramales, 0 tarjetas de cruce, 0 cruces sin confirmar
 - FC Roca: 6 cruces (nivel 6)
+  - 1 ramales, 0 tarjetas de cruce, 0 cruces sin confirmar
 - FC Belgrano: 10 cruces (nivel 4, viaducto 4, puente 2)
+  - 1 ramales, 2 tarjetas de cruce, 1 cruces sin confirmar
 - FC Mitre: 69 cruces (viaducto 37, nivel 15, tunel 15, puente 2)
+  - 3 ramales, 22 tarjetas de cruce, 1 cruces sin confirmar
 - Tramos bajo un viaducto (no son barrera): 61
 
 ## Fondo y rumbos
 
-- Polígonos del río: 1 · agua y parques: 500
+- Polígonos del río: 4 · agua y parques: 500
 - Belgrano: hacia el río = 44°
 - Coghlan: hacia el río = 43°
 - Colegiales: hacia el río = 33°
@@ -380,7 +387,8 @@ Grupos de paralelas que alternan sentido, de 4 o más, a lo largo de 2 transvers
 
 ## Cambios desde la versión anterior
 
-Desde 2026-11-03.e001b1ac: ninguna tarjeta cambió (el archivo de cambios va vacío).
+Desde 2026-11-03.040f74aa: heredan el estado de otra tarjeta 0 · se reinician 0 · nuevas 51 · quitadas 17
+
 
 ## Pendientes
 

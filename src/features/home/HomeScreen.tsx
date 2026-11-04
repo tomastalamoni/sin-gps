@@ -7,9 +7,7 @@ import { Credits } from '../../ui/Credits';
 import { ErrorBoundary } from '../../ui/ErrorBoundary';
 
 // Lee los datos: se carga aparte para que el inicio abra enseguida.
-const VerifyLink = lazy(() =>
-  import('../verify/VerifyLink').then((m) => ({ default: m.VerifyLink })),
-);
+const StudyHome = lazy(() => import('./StudyHome').then((m) => ({ default: m.StudyHome })));
 
 /** Cinco toques seguidos en la versión abren el diagnóstico (sección 10). */
 const DIAGNOSTICS_TAPS = 5;
@@ -49,19 +47,24 @@ export function HomeScreen() {
           className="size-14 rounded-2xl"
         />
         <h1 className="mt-4 text-3xl font-bold tracking-tight">Sin GPS</h1>
-        <p className="mt-2 text-lg text-muted">
-          Aprendé las calles, sentidos y alturas del norte de CABA para manejar sin GPS.
-        </p>
+        {!installed && (
+          <p className="mt-2 text-lg text-muted">
+            Aprendé las calles, sentidos y alturas del norte de CABA para manejar sin GPS.
+          </p>
+        )}
       </header>
 
-      <section aria-label="Estado de la app" className="mt-8 space-y-3">
-        <OfflineNotice status={offline} />
-        {!installed && <InstallHint apple={apple} />}
+      {/* En el iPhone, la app instalada guarda sus datos aparte de Safari: se juega desde el ícono. */}
+      {installed && (
         <ErrorBoundary silent>
           <Suspense fallback={null}>
-            <VerifyLink />
+            <StudyHome />
           </Suspense>
         </ErrorBoundary>
+      )}
+      <section aria-label="Estado de la app" className="mt-8 space-y-3">
+        {(!installed || offline !== 'ready') && <OfflineNotice status={offline} />}
+        {!installed && <InstallHint apple={apple} />}
       </section>
 
       <footer className="mt-auto pt-8 text-center text-sm text-muted">

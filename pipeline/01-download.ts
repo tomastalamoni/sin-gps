@@ -1,6 +1,6 @@
 /**
  * Paso 1 · Descargar las fuentes y guardarlas con fecha en pipeline/raw/.
- * Uso: npm run data:download [-- --refresh]
+ * Uso: npm run data:download [-- --refresh] [-- --refresh --only=osm-landmarks]
  */
 import { readFile } from 'node:fs/promises';
 import { OSM_MARGIN_M, SOURCES } from './config';
@@ -38,7 +38,7 @@ export const OSM_QUERIES: OsmQuery[] = [
   { name: 'osm-coast', extraMarginM: 4000, body: 'way["natural"="coastline"]; out tags geom qt;' },
   {
     name: 'osm-landmarks',
-    body: '(nwr["railway"="station"]; nwr["station"="subway"]; nwr["amenity"="hospital"]; nwr["leisure"="stadium"]; nwr["shop"="mall"]; nwr["amenity"="university"]; nwr["tourism"="museum"]; nwr["aeroway"="aerodrome"]; nwr["historic"="monument"]; nwr["place"="square"]; nwr["leisure"="park"]["name"];); out tags center bb qt;',
+    body: '(nwr["railway"="station"]; nwr["station"="subway"]; nwr["amenity"="hospital"]; nwr["leisure"="stadium"]; nwr["shop"="mall"]; nwr["amenity"="university"]; nwr["tourism"="museum"]; nwr["aeroway"="aerodrome"]; nwr["historic"="monument"]; nwr["place"="square"]; nwr["leisure"="park"]["name"]; nwr["leisure"="garden"]["name"]; nwr["amenity"="planetarium"]; nwr["landuse"="cemetery"]["name"]; nwr["leisure"="sports_centre"]["sport"="horse_racing"]; nwr["landuse"="recreation_ground"]["sport"="polo"]; nwr["amenity"="library"]["tourism"="attraction"]; nwr["tourism"="artwork"]["wikidata"];); out tags center bb qt;',
   },
 ];
 
@@ -48,29 +48,38 @@ export function overpassQuery(body: string, [west, south, east, north]: BBox): s
 }
 
 async function main(): Promise<void> {
-  const refresh = process.argv.includes('--refresh');
-  console.log(`Descargando fuentes${refresh ? ' (--refresh)' : ''}`);
+  const refreshAll = process.argv.includes('--refresh');
+  const only = process.argv.find((arg) => arg.startsWith('--only='))?.slice('--only='.length);
+  const refresh = (name: string) => refreshAll && (only === undefined || only === name);
+  console.log(`Descargando fuentes${refreshAll ? ` (--refresh${only ? ` ${only}` : ''})` : ''}`);
 
   await ensureRaw(
     'callejero',
     'csv',
     SOURCES.callejero,
     () => fetchText(SOURCES.callejero),
-    refresh,
+    refresh('callejero'),
   );
   const barrios = await ensureRaw(
     'barrios',
     'geojson',
     SOURCES.barrios,
     () => fetchText(SOURCES.barrios),
-    refresh,
+    refresh('barrios'),
   );
   const barriosGeo = JSON.parse(await readFile(barrios.path, 'utf8')) as GeoJSON.FeatureCollection;
 
   for (const query of OSM_QUERIES) {
     const bbox = areaBbox(barriosGeo, OSM_MARGIN_M + (query.extraMarginM ?? 0));
     const text = overpassQuery(query.body, bbox);
-    await ensureRaw(query.name, 'json', 'overpass', () => overpass(text), refresh, overpassProblem);
+    await ensureRaw(
+      query.name,
+      'json',
+      'overpass',
+      () => overpass(text),
+      refresh(query.name),
+      overpassProblem,
+    );
   }
   console.log('Listo.');
 }

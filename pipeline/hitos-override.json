@@ -1,1 +1,23 @@
-{}
+{
+  "retiro-mitre": { "major": true },
+  "plaza-san-martin": { "major": true },
+  "cementerio-de-la-recoleta": { "major": true },
+  "facultad-de-derecho": { "major": true },
+  "plaza-italia": { "major": true },
+  "planetario-galileo-galilei": { "major": true },
+  "hipodromo-argentino-de-palermo": { "major": true },
+  "aeroparque-jorge-newbery": { "major": true },
+  "plaza-barrancas-de-belgrano": { "major": true },
+  "belgrano-c": { "major": true },
+  "estadio-monumental": { "major": true },
+  "ciudad-universitaria": { "major": true },
+  "parque-presidente-sarmiento": { "major": true },
+  "dot-baires": { "major": true },
+  "general-urquiza": { "major": true },
+  "colegiales": { "major": true },
+  "coghlan": { "major": true },
+  "la-duda": { "exclude": true },
+  "gladiador-borghese": { "exclude": true },
+  "atlas-de-recoleta": { "exclude": true },
+  "aires-de-buenos-aires": { "exclude": true }
+}

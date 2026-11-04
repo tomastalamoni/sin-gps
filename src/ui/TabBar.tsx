@@ -9,9 +9,13 @@ const TABS = [
   },
 ];
 
+/** Durante una sesión o el primer uso no hay pestañas: nada distrae de lo que se está haciendo. */
+const FULL_SCREEN = ['/sesion', '/bienvenida'];
+
 /** Pestañas de abajo. Las demás de la sección 7 aparecen con su fase. */
 export function TabBar() {
   const [location] = useLocation();
+  if (FULL_SCREEN.includes(location)) return null;
   const isActive = (href: string) =>
     href === '/' ? location === '/' : location === href || location.startsWith(`${href}/`);
 

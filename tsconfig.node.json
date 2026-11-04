@@ -29,6 +29,7 @@
     "pwa-assets.config.ts",
     "scripts",
     "pipeline",
-    "tests/data"
+    "tests/data",
+    "tests/sim"
   ]
 }

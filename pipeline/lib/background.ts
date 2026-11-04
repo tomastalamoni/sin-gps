@@ -144,9 +144,61 @@ export function riverPolygons(
       ring.push(start);
       const feature = toFeature(ring, 'agua', 'Río de la Plata');
       if (feature) out.push(feature);
+      out.push(...openWater(ring, box));
     }
   }
   return out;
+}
+
+/** Hasta dónde sigue el río más allá de la costa descargada: alcanza para cualquier encuadre. */
+const OPEN_WATER_DEG = 1;
+
+/**
+ * El río sigue más allá del recuadro: sin esto, un encuadre alejado mostraría un borde recto donde
+ * termina la costa descargada. Se extiende hacia afuera cada lado del recuadro que da al agua.
+ */
+function openWater(
+  ring: readonly LngLat[],
+  [w, s, e, n]: BBox,
+): GeoJSON.Feature<GeoJSON.Polygon>[] {
+  const near = (a: number, b: number) => Math.abs(a - b) < 1e-9;
+  const far = OPEN_WATER_DEG;
+  const rectangle = (west: number, south: number, east: number, north: number) =>
+    toFeature(
+      [
+        [west, south],
+        [east, south],
+        [east, north],
+        [west, north],
+        [west, south],
+      ],
+      'agua',
+      'Río de la Plata',
+    );
+  const spanOf = (values: number[]) => [Math.min(...values), Math.max(...values)] as const;
+  const out: (GeoJSON.Feature<GeoJSON.Polygon> | undefined)[] = [];
+
+  const top = ring.filter((p) => near(p[1], n)).map((p) => p[0]);
+  if (top.length > 1) {
+    const [low, high] = spanOf(top);
+    out.push(rectangle(near(low, w) ? w - far : low, n, near(high, e) ? e + far : high, n + far));
+  }
+  const bottom = ring.filter((p) => near(p[1], s)).map((p) => p[0]);
+  if (bottom.length > 1) {
+    const [low, high] = spanOf(bottom);
+    out.push(rectangle(near(low, w) ? w - far : low, s - far, near(high, e) ? e + far : high, s));
+  }
+  const right = ring.filter((p) => near(p[0], e)).map((p) => p[1]);
+  if (right.length > 1) {
+    const [low, high] = spanOf(right);
+    out.push(rectangle(e, low, e + far, high));
+  }
+  const left = ring.filter((p) => near(p[0], w)).map((p) => p[1]);
+  if (left.length > 1) {
+    const [low, high] = spanOf(left);
+    out.push(rectangle(w - far, low, w, high));
+  }
+  return out.filter((f) => f !== undefined);
 }
 
 export function areaPolygons(

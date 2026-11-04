@@ -106,6 +106,7 @@ function snapshot(
     segments: { dir: dir.join(''), geometry },
     landmarks: [],
     barrios: ['Z:palermo'],
+    barriers: [],
   };
 }
 
@@ -239,6 +240,7 @@ describe('archivo de cambios', () => {
   it('reinicia la tarjeta de un tramo que cambió de sentido', () => {
     expect(changes.reset).toContain('S:2:1000-1999');
     expect(changes.directionChanges).toContainEqual({
+      was: expect.any(String) as string,
       id: 'S:2:1000-1999',
       street: 2,
       from: 'B',
@@ -252,6 +254,7 @@ describe('archivo de cambios', () => {
     expect(changes.inherit['S:4:1000-1999']).toBeUndefined();
     expect(changes.reset).toContain('S:4:1000-1999');
     expect(changes.directionChanges).toContainEqual({
+      was: expect.any(String) as string,
       id: 'S:4:1000-1999',
       street: 4,
       from: 'B',
@@ -269,6 +272,7 @@ describe('archivo de cambios', () => {
   it('un tramo dudoso que se dio vuelta también se reinicia y enseña el cambio', () => {
     expect(changes.reset).toContain('S:9:1000-1999');
     expect(changes.directionChanges).toContainEqual({
+      was: expect.any(String) as string,
       id: 'S:9:1000-1999',
       street: 9,
       from: 'F',
@@ -280,6 +284,7 @@ describe('archivo de cambios', () => {
   it('si quedó dudoso, se reinicia pero la lección espera', () => {
     expect(changes.reset).toContain('S:10:1000-1999');
     expect(changes.directionChanges).toContainEqual({
+      was: expect.any(String) as string,
       id: 'S:10:1000-1999',
       street: 10,
       from: 'F',

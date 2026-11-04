@@ -2,7 +2,7 @@ import { useDeferredValue, useId, useMemo, useState } from 'react';
 import type { SearchResult } from '../../engine/addresses';
 import type { AppData } from '../../lib/data';
 import { BottomSheet } from '../../ui/BottomSheet';
-import { boundsOfStreet } from './describe';
+import { boundsOfStreet } from '../../engine/describe';
 import { useExplore } from './store';
 
 const KIND_TEXT: Record<SearchResult['kind'], string> = {

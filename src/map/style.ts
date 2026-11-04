@@ -1,11 +1,11 @@
 /**
  * Estilo del mapa, con las capas en el orden de la sección 9. Solo datos propios, sin tiles de
- * terceros. La capa de dominio y el resaltado de preguntas llegan en la Fase 2.
+ * terceros.
  */
 import type { ExpressionSpecification, LayerSpecification, StyleSpecification } from 'maplibre-gl';
 import type { AppData } from '../lib/data';
 import { glyphsUrl } from '../lib/urls';
-import { ARROW_ICON, DOUBTFUL_ARROW_ICON } from './icons';
+import { ARROW_ICON, DOUBTFUL_ARROW_ICON, QUIZ_ARROW_ICON } from './icons';
 import {
   arrowFeatures,
   labelFeatures,
@@ -42,6 +42,8 @@ export const PALETTE = {
     selected: '#0f766e',
     landmark: '#6d28d9',
     pin: '#dc2626',
+    good: '#15803d',
+    bad: '#b91c1c',
   },
   dark: {
     land: '#0f1729',
@@ -62,6 +64,8 @@ export const PALETTE = {
     selected: '#2dd4bf',
     landmark: '#c4b5fd',
     pin: '#f87171',
+    good: '#4ade80',
+    bad: '#f87171',
   },
 } as const;
 
@@ -75,12 +79,23 @@ export const SOURCE = {
   labels: 'labels',
   landmarks: 'landmarks',
   pin: 'pin',
+  quiz: 'quiz',
+  flow: 'flow',
 } as const;
 
 export const PIN_SOURCE = SOURCE.pin;
 export const STREETS_TOUCH_LAYER = 'streets-touch';
 export const LANDMARKS_LAYER = 'landmarks-dot';
 export const SELECTED_LAYER = 'street-selected';
+export const BARRIERS_LAYER = 'barriers';
+export const QUIZ_ARROWS_LAYER = 'quiz-arrows';
+/** Etiquetas de calles, con los niveles de cada capa. */
+export const LABEL_LEVELS: Readonly<Record<string, readonly number[]>> = {
+  'labels-main': [1, 2],
+  'labels-secondary': [3],
+  'labels-local': [4],
+  'labels-minor': [5],
+};
 
 /** Las capas que se prenden y apagan juntas. */
 export const LAYER_GROUPS: Record<LayerGroup, readonly string[]> = {
@@ -92,6 +107,7 @@ export const LAYER_GROUPS: Record<LayerGroup, readonly string[]> = {
 };
 
 const LEVEL: ExpressionSpecification = ['get', 'level'];
+const EMPTY: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] };
 
 /** Ancho de la calle según su nivel: 1 troncales … 5 pasajes. */
 function widthByLevel(extra: number): ExpressionSpecification {
@@ -203,7 +219,7 @@ export function mapStyle(theme: Theme, data: AppData): StyleSpecification {
       },
     },
     {
-      id: 'barriers',
+      id: BARRIERS_LAYER,
       type: 'line',
       source: SOURCE.barriers,
       layout: { 'line-cap': 'round', 'line-join': 'round' },
@@ -239,6 +255,50 @@ export function mapStyle(theme: Theme, data: AppData): StyleSpecification {
       filter: ['==', ['get', 'street'], -1],
       layout: { 'line-cap': 'round', 'line-join': 'round' },
       paint: { 'line-color': colors.selected, 'line-width': widthByLevel(2) },
+    },
+    {
+      id: 'quiz-area',
+      type: 'fill',
+      source: SOURCE.quiz,
+      filter: ['==', ['get', 'role'], 'area'],
+      paint: { 'fill-color': colors.selected, 'fill-opacity': 0.14 },
+    },
+    {
+      id: 'quiz-area-line',
+      type: 'line',
+      source: SOURCE.quiz,
+      filter: ['==', ['get', 'role'], 'area'],
+      paint: { 'line-color': colors.selected, 'line-width': 2.5 },
+    },
+    {
+      id: 'quiz-line-casing',
+      type: 'line',
+      source: SOURCE.quiz,
+      filter: ['==', ['geometry-type'], 'LineString'],
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': colors.halo,
+        'line-width': ['interpolate', ['exponential', 1.6], ['zoom'], 11, 6, 14, 10, 18, 30],
+      },
+    },
+    {
+      id: 'quiz-line',
+      type: 'line',
+      source: SOURCE.quiz,
+      filter: ['==', ['geometry-type'], 'LineString'],
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': [
+          'match',
+          ['get', 'role'],
+          'good',
+          colors.good,
+          'bad',
+          colors.bad,
+          colors.selected,
+        ],
+        'line-width': ['interpolate', ['exponential', 1.6], ['zoom'], 11, 3.5, 14, 6, 18, 22],
+      },
     },
     {
       id: 'arrows',
@@ -333,6 +393,45 @@ export function mapStyle(theme: Theme, data: AppData): StyleSpecification {
       paint: { ...text, 'text-color': colors.landmark },
     },
     {
+      id: 'quiz-point',
+      type: 'circle',
+      source: SOURCE.quiz,
+      filter: ['==', ['get', 'role'], 'point'],
+      paint: {
+        'circle-color': colors.selected,
+        'circle-radius': 11,
+        'circle-stroke-color': colors.halo,
+        'circle-stroke-width': 3,
+      },
+    },
+    {
+      id: QUIZ_ARROWS_LAYER,
+      type: 'symbol',
+      source: SOURCE.quiz,
+      filter: ['==', ['get', 'role'], 'arrow'],
+      layout: {
+        'icon-image': QUIZ_ARROW_ICON,
+        'icon-size': 1.5,
+        'icon-rotate': ['get', 'rotate'],
+        'icon-rotation-alignment': 'map',
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+      },
+    },
+    {
+      id: 'quiz-flow',
+      type: 'symbol',
+      source: SOURCE.flow,
+      layout: {
+        'icon-image': QUIZ_ARROW_ICON,
+        'icon-size': 1.1,
+        'icon-rotate': ['get', 'rotate'],
+        'icon-rotation-alignment': 'map',
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+      },
+    },
+    {
       id: 'pin',
       type: 'circle',
       source: SOURCE.pin,
@@ -364,7 +463,9 @@ export function mapStyle(theme: Theme, data: AppData): StyleSpecification {
       [SOURCE.arrows]: { type: 'geojson', data: arrowFeatures(data) },
       [SOURCE.labels]: { type: 'geojson', data: labelFeatures(data) },
       [SOURCE.landmarks]: { type: 'geojson', data: landmarkFeatures(data) },
-      [SOURCE.pin]: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
+      [SOURCE.pin]: { type: 'geojson', data: EMPTY },
+      [SOURCE.quiz]: { type: 'geojson', data: EMPTY },
+      [SOURCE.flow]: { type: 'geojson', data: EMPTY },
     },
     layers,
   };

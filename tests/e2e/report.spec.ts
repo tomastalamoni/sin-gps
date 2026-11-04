@@ -90,7 +90,7 @@ test('un reporte de otra cosa pide una nota', async ({ page }) => {
 
 test('la lista para verificar corrige un tramo y lo saca de la lista', async ({ page }) => {
   await page.goto('./');
-  await page.getByRole('link', { name: /Para verificar/ }).click();
+  await page.goto('./#/verificar');
   await expect(page.getByRole('heading', { level: 1, name: 'Para verificar' })).toBeVisible();
 
   const summary = page.getByText(/Tramos en duda o sin confirmar: \d+/);

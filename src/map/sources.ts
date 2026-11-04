@@ -90,7 +90,7 @@ export function arrowFeatures({ graph, streets }: AppData): GeoJSON.FeatureColle
       const oneWay = segmentsOf(graph, street.segments).filter((s) => s.dir !== 'D');
       return [false, true].flatMap((doubtful) =>
         joinSections(oneWay.filter((s) => s.doubtful === doubtful).map(travelPiece), false).map(
-          (section) => line(section.line, { doubtful }),
+          (section) => line(section.line, { doubtful, street: street.code }),
         ),
       );
     }),
@@ -102,7 +102,7 @@ export function labelFeatures({ graph, streets }: AppData): GeoJSON.FeatureColle
   return collection(
     streets.flatMap((street) =>
       joinSections(segmentsOf(graph, street.segments).map(travelPiece), true).map((section) =>
-        line(section.line, { name: street.name, level: street.level }),
+        line(section.line, { name: street.name, level: street.level, street: street.code }),
       ),
     ),
   );

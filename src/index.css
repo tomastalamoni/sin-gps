@@ -15,6 +15,7 @@
   --color-on-brand: #ffffff;
   --color-ok: #166534;
   --color-warn: #92400e;
+  --color-bad: #b91c1c;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -28,6 +29,7 @@
     --color-on-brand: #042f2e;
     --color-ok: #86efac;
     --color-warn: #fcd34d;
+    --color-bad: #fca5a5;
   }
 }
 

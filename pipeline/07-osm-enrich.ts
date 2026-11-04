@@ -40,7 +40,7 @@ import {
 } from './lib/network';
 import type { OsmFeature, OsmNode, OsmRelation, OsmWay } from './lib/osm';
 import { applyCorrections, type Correction, type CorrectionsResult } from './lib/overrides';
-import { buildRail, type RailBuild } from './lib/rail';
+import { addRailStretches, buildRail, type RailBuild } from './lib/rail';
 import { layoutStreet } from './lib/stretches';
 import { findMidBlockChanges, type MidBlockChange } from './lib/validate';
 import type { WorkSegment } from './lib/types';
@@ -272,6 +272,7 @@ export function enrich(
     };
   });
   streets.sort((a, b) => a.code - b.code);
+  addRailStretches(rail, streets, segments);
 
   const midBlock = findMidBlockChanges(graphInput, build.junctions, true);
   const landmarks = selectLandmarks(osm.landmarks, area, segments, overrides.landmarks);

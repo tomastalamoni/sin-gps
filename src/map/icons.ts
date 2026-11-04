@@ -6,6 +6,7 @@ import type { Map as MapLibreMap } from 'maplibre-gl';
 
 export const ARROW_ICON = 'arrow';
 export const DOUBTFUL_ARROW_ICON = 'arrow-doubtful';
+export const QUIZ_ARROW_ICON = 'arrow-quiz';
 
 const SIZE = 48;
 const PIXEL_RATIO = 2;
@@ -70,11 +71,12 @@ function drawDoubtfulArrow(color: string, halo: string): ImageData {
 /** Agrega los íconos con los colores del tema. */
 export function addIcons(
   map: MapLibreMap,
-  colors: { arrow: string; doubtful: string; halo: string },
+  colors: { arrow: string; doubtful: string; halo: string; selected: string },
 ): void {
   const images = [
     [ARROW_ICON, drawArrow(colors.arrow, colors.halo)],
     [DOUBTFUL_ARROW_ICON, drawDoubtfulArrow(colors.doubtful, colors.halo)],
+    [QUIZ_ARROW_ICON, drawArrow(colors.selected, colors.halo)],
   ] as const;
   for (const [id, image] of images) {
     // MapLibre conserva los íconos al cambiar de estilo: hay que reemplazarlos.

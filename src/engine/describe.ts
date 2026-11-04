@@ -1,10 +1,10 @@
 /**
  * Textos de la ficha de calle, a partir de los datos.
  */
-import type { Confidence, DirectionStretch } from '../../engine/data';
-import { bearingDeg, lineLengthM, pointAlong, type LngLat } from '../../engine/geo';
-import type { RoadGraph } from '../../engine/graph';
-import { riverBearingAt, rumboOf } from '../../engine/rumbos';
+import type { Confidence, DirectionStretch } from './data';
+import { bearingDeg, lineLengthM, pointAlong, type LngLat } from './geo';
+import type { RoadGraph } from './graph';
+import { riverBearingAt, rumboOf } from './rumbos';
 
 export const CONFIDENCE_TEXT: Record<Confidence, string> = {
   confirmado: 'Confirmado',

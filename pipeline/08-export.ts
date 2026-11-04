@@ -20,6 +20,7 @@ import {
 } from '../src/engine/data';
 import type { LngLat } from '../src/engine/geo';
 import { segmentOf } from '../src/engine/graph';
+import { cardIds, slugify } from '../src/engine/ids';
 import type { Numbering } from './02-numbering';
 import type { ClipResult } from './03-clip';
 import type { GraphBuild } from './05-graph';
@@ -68,15 +69,25 @@ function roundGeometry(feature: GeoJSON.Feature): GeoJSON.Feature {
   };
 }
 
+/** Las autopistas sin calle propia se enseñan con su tarjeta de nombre (B:autopista:nombre). */
+function barrierCard(name: string): string {
+  return cardIds.barrier(slugify(name), 'nombre');
+}
+
 function barrierFeatures(
   barriers: readonly WorkSegment[],
   nameOf: (code: number) => string,
+  streets: ReadonlySet<number>,
 ): GeoJSON.FeatureCollection {
   return {
     type: 'FeatureCollection',
     features: barriers.map((b) => ({
       type: 'Feature',
-      properties: { street: b.code, name: nameOf(b.code) },
+      properties: {
+        street: b.code,
+        name: nameOf(b.code),
+        ...(streets.has(b.code) ? {} : { card: barrierCard(nameOf(b.code)) }),
+      },
       geometry: {
         type: 'LineString',
         coordinates: b.line.map(([lng, lat]) => [
@@ -88,7 +99,27 @@ function barrierFeatures(
   };
 }
 
+/** Las tarjetas B: de unos datos publicados. */
+export function barrierCards(
+  // Los datos publicados antes de la Fase 2 no tienen tramos.
+  rail: { lines: readonly { stretches?: readonly { id: string }[] }[] },
+  barriers: GeoJSON.FeatureCollection,
+): string[] {
+  const cards = barriers.features.flatMap(({ properties }) => {
+    const card = (properties as { card?: string } | null)?.card;
+    return card ? [card] : [];
+  });
+  return [
+    ...new Set([
+      ...rail.lines.flatMap((line) => (line.stretches ?? []).map((s) => s.id)),
+      ...cards,
+    ]),
+  ];
+}
+
 export interface ExportInputs {
+  /** Los archivos de cambios ya publicados. */
+  changeFiles: readonly string[];
   model: DataModel;
   build: GraphBuild;
   clip: ClipResult;
@@ -128,7 +159,13 @@ export function exportData(inputs: ExportInputs): ExportResult {
       .filter((n) => model.graph.degree(n) === 2)
       .sort((a, b) => a - b),
   };
-  const content = json([segmentsFile, graphFile, model.streets, model.landmarks]);
+  const content = json([
+    segmentsFile,
+    graphFile,
+    model.streets,
+    model.landmarks,
+    model.rail.lines.map((line) => line.stretches),
+  ]);
   const version = `${inputs.sourceDate}.${createHash('sha256').update(content).digest('hex').slice(0, 8)}`;
 
   const nameOf = (code: number) => model.names.names.get(code)?.name ?? String(code);
@@ -140,7 +177,10 @@ export function exportData(inputs: ExportInputs): ExportResult {
     version,
     lines: model.rail.lines,
     unnamed: model.rail.unnamed,
+    terminal: model.rail.terminal,
   };
+  const streetCodes = new Set(model.streets.map((s) => s.code));
+  const barrierFile = barrierFeatures(model.barriers, nameOf, streetCodes);
 
   const files = new Map<string, string>([
     ['tramos.json', json({ ...segmentsFile, version })],
@@ -149,7 +189,7 @@ export function exportData(inputs: ExportInputs): ExportResult {
     ['patrones.json', json(patternsFile)],
     ['hitos.json', json(landmarksFile)],
     ['vias.json', json(railFile)],
-    ['barreras.json', json({ version, ...barrierFeatures(model.barriers, nameOf) })],
+    ['barreras.json', json({ version, ...barrierFile })],
     ['fondo.json', json({ version, ...model.background })],
     [
       'barrios.json',
@@ -167,9 +207,11 @@ export function exportData(inputs: ExportInputs): ExportResult {
           segments: segmentsFile,
           landmarks: model.landmarks,
           barrios: model.barrios.features.map((f) => String(f.properties?.id)),
+          barriers: barrierCards(railFile, barrierFile),
         })
       : undefined;
-  if (changes) files.set(`cambios-${changes.from}-${changes.to}.json`, json(changes));
+  const changesName = changes && `cambios-${changes.from}-${changes.to}.json`;
+  if (changes && changesName) files.set(changesName, json(changes));
 
   const all: LngLat[] = model.nodes;
   const lngs = all.map((p) => p[0]);
@@ -211,6 +253,7 @@ export function exportData(inputs: ExportInputs): ExportResult {
       patrones: model.patterns.length,
     },
     files: sizes,
+    changes: [...new Set([...inputs.changeFiles, ...(changesName ? [changesName] : [])])].sort(),
   };
   files.set('meta.json', json(meta));
   const report = buildReport(inputs, version, sizes, changes);
@@ -524,6 +567,9 @@ function buildReport(
       .map(([k, v]) => `${k} ${v}`)
       .join(', ');
     out(`- ${line.name}: ${line.crossings.length} cruces (${kinds || 'ninguno'})`);
+    out(
+      `  - ${line.branches.length} ramales, ${line.stretches.length} tarjetas de cruce, ${line.crossings.filter((c) => c.unconfirmed).length} cruces sin confirmar`,
+    );
   }
   out(
     `- Tramos bajo un viaducto (no son barrera): ${segments.filter((s) => (s.flags & SegmentFlag.underViaduct) !== 0).length}`,

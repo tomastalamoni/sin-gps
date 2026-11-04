@@ -47,21 +47,30 @@ interface MapViewProps {
   styleFor: (theme: Theme) => StyleSpecification;
   /** Se llama una vez, recién creado el mapa. Devuelve cómo limpiar lo que agregó. */
   onCreate?: (map: MapLibreMap, theme: () => Theme) => () => void;
+  /** En las preguntas el mapa no gira: el norte queda siempre arriba. */
+  fixedNorth?: boolean;
 }
 
-export function MapView({ label, className, camera, styleFor, onCreate }: MapViewProps) {
+export function MapView({
+  label,
+  className,
+  camera,
+  styleFor,
+  onCreate,
+  fixedNorth = false,
+}: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [supported] = useState(supportsWebGL2);
   const [ready, setReady] = useState(false);
   // El mapa se crea una sola vez: estos valores se leen en ese momento o al cambiar el tema.
-  const props = useRef({ camera, styleFor, onCreate });
+  const props = useRef({ camera, styleFor, onCreate, fixedNorth });
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const darkScheme = window.matchMedia(DARK_SCHEME);
-    const { camera: initial, styleFor: style, onCreate: create } = props.current;
+    const { camera: initial, styleFor: style, onCreate: create, fixedNorth: fixed } = props.current;
     const map = new MapLibreMap({
       container,
       style: style(themeOf(darkScheme)),
@@ -73,7 +82,14 @@ export function MapView({ label, className, camera, styleFor, onCreate }: MapVie
       pitchWithRotate: false,
       maxPitch: 0,
     });
-    map.addControl(new NavigationControl({ visualizePitch: false }), 'bottom-right');
+    map.addControl(
+      new NavigationControl({ visualizePitch: false, showCompass: !fixed }),
+      'bottom-right',
+    );
+    if (fixed) {
+      map.dragRotate.disable();
+      map.touchZoomRotate.disableRotation();
+    }
     const cleanUp = create?.(map, () => themeOf(darkScheme));
     // "idle" llega cuando terminó de dibujar todo, glyphs incluidos.
     map.once('idle', () => {

@@ -31,8 +31,16 @@ describe('base local', () => {
   it('una base vacía arranca en la última versión del esquema', async () => {
     const database = new Database(NAME);
     await database.open();
-    expect(database.verno).toBe(1);
-    expect(database.tables.map((t) => t.name).sort()).toEqual(['meta', 'overrides']);
+    expect(database.verno).toBe(2);
+    expect(database.tables.map((t) => t.name).sort()).toEqual([
+      'cards',
+      'confusions',
+      'days',
+      'meta',
+      'overrides',
+      'reviews',
+      'settings',
+    ]);
     database.close();
   });
 });

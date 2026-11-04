@@ -41,6 +41,7 @@ describe.skipIf(!existsSync(join(DIR, 'calles.json')))('nombres en el código', 
     for (const file of sourceFiles('src')) {
       const source = withoutComments(readFileSync(file, 'utf8'));
       for (const name of names) {
+        if (!source.includes(name)) continue;
         const pattern = new RegExp(`(^|[^\\p{L}])${RegExp.escape(name)}($|[^\\p{L}])`, 'u');
         if (pattern.test(source)) found.push(`${file}: ${name}`);
       }
