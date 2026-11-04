@@ -52,7 +52,7 @@ test('guarda todo para usar sin internet y anda en modo avión', async ({
   await context.setOffline(true);
   await page.reload();
   await expect(page.getByRole('heading', { level: 1, name: 'Sin GPS' })).toBeVisible();
-  await page.getByRole('link', { name: 'Ver mapa de prueba' }).click();
+  await page.getByRole('link', { name: 'Mapa' }).click();
   await expect(page.locator(MAP_READY)).toBeVisible({ timeout: 30_000 });
 });
 
@@ -63,7 +63,7 @@ test('sin recargar, el mapa abre sin internet apenas dice "Lista"', async ({ pag
   await expect(page.getByText('Lista para usar sin internet')).toBeVisible({ timeout: 30_000 });
 
   await context.setOffline(true);
-  await page.getByRole('link', { name: 'Ver mapa de prueba' }).click();
+  await page.getByRole('link', { name: 'Mapa' }).click();
   await expect(page.locator(MAP_READY)).toBeVisible({ timeout: 30_000 });
 });
 

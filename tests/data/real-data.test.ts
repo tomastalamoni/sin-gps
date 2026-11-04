@@ -207,6 +207,46 @@ describe.skipIf(!hasData)('datos reales', () => {
     expect(wrong).toEqual([]);
   });
 
+  it('solo los tramos sin alturas pueden estar dibujados al revés', () => {
+    const hasHeights = (t: number) => segments.heights.slice(4 * t, 4 * t + 4).some((h) => h > 0);
+    const wrong = streets.streets
+      .flatMap((s) => s.stretches)
+      .filter((s) => s.against?.some(hasHeights))
+      .map((s) => s.id);
+    expect(wrong).toEqual([]);
+  });
+
+  it('al corregir un tramo a mano única, las cuadras sin alturas siguen a sus vecinas', () => {
+    const hasHeights = (t: number) => segments.heights.slice(4 * t, 4 * t + 4).some((h) => h > 0);
+    const wrong: string[] = [];
+    let checked = 0;
+    for (const street of streets.streets) {
+      for (const stretch of street.stretches) {
+        if (!stretch.askable || stretch.splitCarriageway) continue;
+        // Cada cuadra, con el tránsito hacia donde crece la numeración.
+        const travel = stretch.segments.map((t) => {
+          const [from, to] = [segments.from[t] ?? -1, segments.to[t] ?? -1];
+          return { t, ...(stretch.against?.includes(t) ? { from: to, to: from } : { from, to }) };
+        });
+        const count = (node: number) =>
+          stretch.segments.filter((t) => segments.from[t] === node || segments.to[t] === node)
+            .length;
+        for (const a of travel) {
+          if (hasHeights(a.t)) continue;
+          for (const b of travel) {
+            // En una esquina donde solo se tocan dos cuadras, una tiene que seguir a la otra. Dos
+            // líneas paralelas con alturas pueden juntarse: su geometría no depende de nada.
+            if (a === b || count(a.to) !== 2) continue;
+            if (a.to === b.from) checked++;
+            if (a.to === b.to) wrong.push(stretch.id);
+          }
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(20);
+    expect(wrong).toEqual([]);
+  });
+
   it('una calle no repite una transversal a menos de 150 m', () => {
     const point = (n: number): LngLat => [
       (graphFile.nodes[2 * n] ?? 0) / 1e6,

@@ -1,8 +1,37 @@
-import { Link } from 'wouter';
+import { lazy, Suspense, useRef } from 'react';
+import { useLocation } from 'wouter';
 import { isAppleMobile, isStandalone } from '../../lib/platform';
 import { usePwaState, type OfflineStatus } from '../../lib/pwa';
 import { assetUrl } from '../../lib/urls';
 import { Credits } from '../../ui/Credits';
+import { ErrorBoundary } from '../../ui/ErrorBoundary';
+
+// Lee los datos: se carga aparte para que el inicio abra enseguida.
+const VerifyLink = lazy(() =>
+  import('../verify/VerifyLink').then((m) => ({ default: m.VerifyLink })),
+);
+
+/** Cinco toques seguidos en la versión abren el diagnóstico (sección 10). */
+const DIAGNOSTICS_TAPS = 5;
+const TAP_WINDOW_MS = 3000;
+
+function VersionButton() {
+  const [, navigate] = useLocation();
+  const taps = useRef<number[]>([]);
+  return (
+    <button
+      type="button"
+      className="min-h-12 px-3"
+      onClick={(event) => {
+        const recent = taps.current.filter((t) => event.timeStamp - t < TAP_WINDOW_MS);
+        taps.current = [...recent, event.timeStamp];
+        if (taps.current.length >= DIAGNOSTICS_TAPS) navigate('/diagnostico');
+      }}
+    >
+      Versión {__APP_VERSION__} · {__COMMIT__}
+    </button>
+  );
+}
 
 export function HomeScreen() {
   const { offline } = usePwaState();
@@ -10,7 +39,7 @@ export function HomeScreen() {
   const apple = isAppleMobile(navigator.userAgent, navigator.maxTouchPoints);
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
+    <div className="mx-auto flex min-h-full max-w-md flex-col px-5 pt-[max(1.5rem,env(safe-area-inset-top))] pb-4">
       <header className="pt-4">
         <img
           src={assetUrl('logo.svg')}
@@ -28,23 +57,18 @@ export function HomeScreen() {
       <section aria-label="Estado de la app" className="mt-8 space-y-3">
         <OfflineNotice status={offline} />
         {!installed && <InstallHint apple={apple} />}
+        <ErrorBoundary silent>
+          <Suspense fallback={null}>
+            <VerifyLink />
+          </Suspense>
+        </ErrorBoundary>
       </section>
 
-      <div className="mt-auto pt-8">
-        <Link
-          href="/prueba-mapa"
-          className="flex min-h-14 w-full items-center justify-center rounded-2xl bg-brand px-6 text-lg font-semibold text-on-brand active:opacity-80"
-        >
-          Ver mapa de prueba
-        </Link>
-        <footer className="mt-4 text-center text-sm text-muted">
-          <Credits />
-          <p>
-            Versión {__APP_VERSION__} · {__COMMIT__}
-          </p>
-        </footer>
-      </div>
-    </main>
+      <footer className="mt-auto pt-8 text-center text-sm text-muted">
+        <Credits />
+        <VersionButton />
+      </footer>
+    </div>
   );
 }
 

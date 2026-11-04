@@ -7,6 +7,7 @@
 import { execFileSync } from 'node:child_process';
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { AddressBook } from '../src/engine/addresses';
 import type { LandmarksFile, SegmentsFile, StreetsFile } from '../src/engine/data';
 import type { LngLat } from '../src/engine/geo';
 import { computeNumbering, orientRows } from './02-numbering';
@@ -23,7 +24,7 @@ import type { LandmarkOverride } from './lib/landmarks';
 import { featuresOf, loadOsm, nodesOf, relationsOf, waysOf } from './lib/osm';
 import type { OverridesFile } from './lib/overrides';
 import { latestRaw, readManifest } from './lib/raw';
-import { checkStatus, runChecks } from './lib/validate';
+import { checkStatus, factsCheck, runChecks } from './lib/validate';
 
 async function readRaw(name: string, ext: string): Promise<{ text: string; date: string }> {
   const raw = await latestRaw(name, ext);
@@ -113,14 +114,26 @@ async function main(): Promise<void> {
   const model = step('enriquecimiento', () =>
     enrich(graph, numbering, osm, barrios, clipped.area, overrides),
   );
-  const checks = step('validaciones', () =>
-    runChecks(
+  const checks = step('validaciones', () => [
+    ...runChecks(
       model.graphInput,
       graph.junctions,
       model.report.connectivity,
       graph.segments.filter((s) => s.osm).length / graph.segments.length,
     ),
-  );
+    factsCheck({
+      graph: model.graph,
+      streets: model.streets,
+      addresses: new AddressBook(
+        model.graph,
+        model.segments.flatMap((s) => s.heights),
+        model.streets,
+        model.landmarks,
+      ),
+      rail: model.rail,
+      barrios: model.barrios,
+    }),
+  ]);
 
   const previous = previousSnapshot();
   const result = exportData({

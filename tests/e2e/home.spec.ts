@@ -5,7 +5,7 @@ test('el inicio muestra la app, el estado sin internet y los créditos', async (
 
   await expect(page.getByRole('heading', { level: 1, name: 'Sin GPS' })).toBeVisible();
   await expect(page.getByText(/para usar sin internet/)).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Ver mapa de prueba' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Mapa' })).toBeVisible();
   await expect(page.getByRole('link', { name: '© OpenStreetMap contributors' })).toHaveAttribute(
     'href',
     'https://www.openstreetmap.org/copyright',

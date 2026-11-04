@@ -1,161 +1,371 @@
-import type { StyleSpecification } from 'maplibre-gl';
+/**
+ * Estilo del mapa, con las capas en el orden de la sección 9. Solo datos propios, sin tiles de
+ * terceros. La capa de dominio y el resaltado de preguntas llegan en la Fase 2.
+ */
+import type { ExpressionSpecification, LayerSpecification, StyleSpecification } from 'maplibre-gl';
+import type { AppData } from '../lib/data';
 import { glyphsUrl } from '../lib/urls';
-import { TEST_MAP_CENTER } from './config';
+import { ARROW_ICON, DOUBTFUL_ARROW_ICON } from './icons';
+import {
+  arrowFeatures,
+  labelFeatures,
+  landmarkFeatures,
+  railFeatures,
+  streetFeatures,
+} from './sources';
 
 export type Theme = 'light' | 'dark';
+
+export type LayerGroup = 'names' | 'arrows' | 'landmarks' | 'rail' | 'barrios';
 
 // Cada fuente es una carpeta de public/fonts (ver scripts/fetch-glyphs.ts).
 const FONT_REGULAR = 'noto-sans-regular';
 const FONT_MEDIUM = 'noto-sans-medium';
 
-const PALETTE = {
+export const PALETTE = {
   light: {
-    land: '#f1f5f4',
-    area: '#cfe8df',
-    areaOutline: '#7fb8a4',
-    line: '#94a3b8',
-    point: '#0f766e',
-    text: '#0f172a',
+    land: '#f4f2ee',
+    water: '#a9d3ea',
+    park: '#cfe8c9',
+    street: '#ffffff',
+    casing: '#c3c9d3',
+    avenue: '#ffeab0',
+    avenueCasing: '#dcb45a',
+    barrier: '#f2a766',
+    barrierCasing: '#b4632a',
+    rail: '#7c8493',
+    barrio: '#8e6bb0',
+    text: '#1f2937',
     halo: '#ffffff',
+    arrow: '#334155',
+    doubtful: '#b45309',
+    selected: '#0f766e',
+    landmark: '#6d28d9',
+    pin: '#dc2626',
   },
   dark: {
     land: '#0f1729',
-    area: '#123a33',
-    areaOutline: '#2f7f6d',
-    line: '#64748b',
-    point: '#2dd4bf',
+    water: '#12324f',
+    park: '#14382f',
+    street: '#3a4a60',
+    casing: '#1b2536',
+    avenue: '#6b5a2e',
+    avenueCasing: '#2c2614',
+    barrier: '#8f5a2c',
+    barrierCasing: '#3d2612',
+    rail: '#8894a8',
+    barrio: '#b79ad6',
     text: '#e2e8f0',
     halo: '#0b1220',
+    arrow: '#cbd5e1',
+    doubtful: '#fbbf24',
+    selected: '#2dd4bf',
+    landmark: '#c4b5fd',
+    pin: '#f87171',
   },
 } as const;
 
-// Textos de prueba: usan los dos rangos de glyphs incluidos (tildes y ñ; comillas y guiones).
-const AREA_LABEL = 'Área de prueba';
-const LINE_LABEL = 'Línea de prueba – ñandú';
-const POINT_LABEL = 'Prueba de texto: ñ á é í ó ú ü ¿ ¡ “ ” –';
+export const SOURCE = {
+  background: 'background',
+  barrios: 'barrios',
+  rail: 'rail',
+  barriers: 'barriers',
+  streets: 'streets',
+  arrows: 'arrows',
+  labels: 'labels',
+  landmarks: 'landmarks',
+  pin: 'pin',
+} as const;
 
-function sampleFeatures(): GeoJSON.FeatureCollection {
-  const [lng, lat] = TEST_MAP_CENTER;
-  const d = 0.004;
-  return {
-    type: 'FeatureCollection',
-    features: [
-      {
-        type: 'Feature',
-        properties: { label: AREA_LABEL },
-        geometry: {
-          type: 'Polygon',
-          coordinates: [
-            [
-              [lng - d, lat + d * 0.4],
-              [lng - d * 0.2, lat + d * 0.4],
-              [lng - d * 0.2, lat + d * 1.2],
-              [lng - d, lat + d * 1.2],
-              [lng - d, lat + d * 0.4],
-            ],
-          ],
-        },
-      },
-      {
-        type: 'Feature',
-        properties: { label: LINE_LABEL },
-        geometry: {
-          type: 'LineString',
-          // Lejos del punto: si las etiquetas se pisan, MapLibre oculta una.
-          coordinates: [
-            [lng - d * 1.5, lat - d * 2.2],
-            [lng + d * 1.5, lat - d * 1.6],
-          ],
-        },
-      },
-      {
-        type: 'Feature',
-        properties: { label: POINT_LABEL },
-        geometry: { type: 'Point', coordinates: [lng, lat] },
-      },
-    ],
-  };
+export const PIN_SOURCE = SOURCE.pin;
+export const STREETS_TOUCH_LAYER = 'streets-touch';
+export const LANDMARKS_LAYER = 'landmarks-dot';
+export const SELECTED_LAYER = 'street-selected';
+
+/** Las capas que se prenden y apagan juntas. */
+export const LAYER_GROUPS: Record<LayerGroup, readonly string[]> = {
+  names: ['labels-main', 'labels-secondary', 'labels-local', 'labels-minor', 'barriers-label'],
+  arrows: ['arrows', 'arrows-doubtful'],
+  landmarks: [LANDMARKS_LAYER, 'landmarks-label'],
+  rail: ['rail-line', 'rail-ties'],
+  barrios: ['barrios-line', 'barrios-label'],
+};
+
+const LEVEL: ExpressionSpecification = ['get', 'level'];
+
+/** Ancho de la calle según su nivel: 1 troncales … 5 pasajes. */
+function widthByLevel(extra: number): ExpressionSpecification {
+  const at = (widths: [number, number, number, number, number]): ExpressionSpecification => [
+    'match',
+    LEVEL,
+    1,
+    widths[0] + extra,
+    2,
+    widths[1] + extra,
+    3,
+    widths[2] + extra,
+    4,
+    widths[3] + extra,
+    widths[4] + extra,
+  ];
+  return [
+    'interpolate',
+    ['exponential', 1.6],
+    ['zoom'],
+    11,
+    at([2.5, 2, 1.2, 0.6, 0.4]),
+    14,
+    at([6, 5, 3.5, 2.2, 1.5]),
+    18,
+    at([26, 22, 17, 13, 9]),
+  ];
 }
 
-/** Estilo del mapa de prueba: solo datos propios, sin tiles de terceros. */
-export function testStyle(theme: Theme): StyleSpecification {
+function colorByLevel(avenue: string, street: string): ExpressionSpecification {
+  return ['case', ['<=', LEVEL, 2], avenue, street];
+}
+
+export function mapStyle(theme: Theme, data: AppData): StyleSpecification {
   const colors = PALETTE[theme];
-  const textPaint = {
+  const text = {
     'text-color': colors.text,
     'text-halo-color': colors.halo,
-    'text-halo-width': 2,
+    'text-halo-width': 1.5,
   };
+
+  const labelLayer = (
+    id: string,
+    minzoom: number,
+    levels: number[],
+    size: number,
+    font = FONT_REGULAR,
+  ): LayerSpecification => ({
+    id,
+    type: 'symbol',
+    source: SOURCE.labels,
+    minzoom,
+    filter: ['in', LEVEL, ['literal', levels]],
+    layout: {
+      'symbol-placement': 'line',
+      'symbol-spacing': 320,
+      'text-field': ['get', 'name'],
+      'text-font': [font],
+      'text-size': size,
+      'text-max-angle': 35,
+      'text-padding': 4,
+    },
+    paint: text,
+  });
+
+  const layers: LayerSpecification[] = [
+    { id: 'land', type: 'background', paint: { 'background-color': colors.land } },
+    {
+      id: 'water',
+      type: 'fill',
+      source: SOURCE.background,
+      filter: ['==', ['get', 'kind'], 'agua'],
+      paint: { 'fill-color': colors.water },
+    },
+    {
+      id: 'parks',
+      type: 'fill',
+      source: SOURCE.background,
+      filter: ['==', ['get', 'kind'], 'parque'],
+      paint: { 'fill-color': colors.park },
+    },
+    {
+      id: 'rail-line',
+      type: 'line',
+      source: SOURCE.rail,
+      paint: { 'line-color': colors.rail, 'line-width': 2 },
+    },
+    {
+      id: 'rail-ties',
+      type: 'line',
+      source: SOURCE.rail,
+      minzoom: 13,
+      paint: { 'line-color': colors.rail, 'line-width': 5, 'line-dasharray': [0.3, 3] },
+    },
+    {
+      id: 'barrios-line',
+      type: 'line',
+      source: SOURCE.barrios,
+      paint: { 'line-color': colors.barrio, 'line-width': 1.5, 'line-dasharray': [3, 2] },
+    },
+    {
+      id: 'barriers-casing',
+      type: 'line',
+      source: SOURCE.barriers,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': colors.barrierCasing,
+        'line-width': ['interpolate', ['exponential', 1.6], ['zoom'], 11, 3.5, 18, 30],
+      },
+    },
+    {
+      id: 'barriers',
+      type: 'line',
+      source: SOURCE.barriers,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': colors.barrier,
+        'line-width': ['interpolate', ['exponential', 1.6], ['zoom'], 11, 2.5, 18, 27],
+      },
+    },
+    {
+      id: 'streets-casing',
+      type: 'line',
+      source: SOURCE.streets,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': colorByLevel(colors.avenueCasing, colors.casing),
+        'line-width': widthByLevel(1.5),
+      },
+    },
+    {
+      id: 'streets',
+      type: 'line',
+      source: SOURCE.streets,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': colorByLevel(colors.avenue, colors.street),
+        'line-width': widthByLevel(0),
+      },
+    },
+    {
+      id: SELECTED_LAYER,
+      type: 'line',
+      source: SOURCE.streets,
+      filter: ['==', ['get', 'street'], -1],
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': colors.selected, 'line-width': widthByLevel(2) },
+    },
+    {
+      id: 'arrows',
+      type: 'symbol',
+      source: SOURCE.arrows,
+      minzoom: 14,
+      filter: ['==', ['get', 'doubtful'], false],
+      layout: {
+        'symbol-placement': 'line',
+        'symbol-spacing': 110,
+        'icon-image': ARROW_ICON,
+        'icon-size': ['interpolate', ['linear'], ['zoom'], 14, 0.55, 18, 1],
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+        'icon-rotation-alignment': 'map',
+      },
+    },
+    {
+      id: 'arrows-doubtful',
+      type: 'symbol',
+      source: SOURCE.arrows,
+      minzoom: 14,
+      filter: ['==', ['get', 'doubtful'], true],
+      layout: {
+        'symbol-placement': 'line',
+        'symbol-spacing': 110,
+        'icon-image': DOUBTFUL_ARROW_ICON,
+        'icon-size': ['interpolate', ['linear'], ['zoom'], 14, 0.65, 18, 1.1],
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+        'icon-rotation-alignment': 'map',
+      },
+    },
+    {
+      id: LANDMARKS_LAYER,
+      type: 'circle',
+      source: SOURCE.landmarks,
+      minzoom: 13,
+      paint: {
+        'circle-color': colors.landmark,
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 13, 3, 16, 7],
+        'circle-stroke-color': colors.halo,
+        'circle-stroke-width': 1.5,
+      },
+    },
+    {
+      id: 'barrios-label',
+      type: 'symbol',
+      source: SOURCE.barrios,
+      maxzoom: 14,
+      layout: {
+        'text-field': ['get', 'display'],
+        'text-font': [FONT_MEDIUM],
+        'text-size': 15,
+        'text-transform': 'uppercase',
+        'text-letter-spacing': 0.08,
+      },
+      paint: { ...text, 'text-color': colors.barrio },
+    },
+    {
+      id: 'barriers-label',
+      type: 'symbol',
+      source: SOURCE.barriers,
+      minzoom: 13,
+      layout: {
+        'symbol-placement': 'line',
+        'symbol-spacing': 420,
+        'text-field': ['get', 'name'],
+        'text-font': [FONT_MEDIUM],
+        'text-size': 12,
+      },
+      paint: text,
+    },
+    labelLayer('labels-main', 12, [1, 2], 13, FONT_MEDIUM),
+    labelLayer('labels-secondary', 13.5, [3], 12.5, FONT_MEDIUM),
+    labelLayer('labels-local', 14.5, [4], 12),
+    labelLayer('labels-minor', 15.5, [5], 11.5),
+    {
+      id: 'landmarks-label',
+      type: 'symbol',
+      source: SOURCE.landmarks,
+      minzoom: 14,
+      layout: {
+        'text-field': ['get', 'name'],
+        'text-font': [FONT_REGULAR],
+        'text-size': 12,
+        'text-anchor': 'top',
+        'text-offset': [0, 0.7],
+        'text-max-width': 9,
+        'text-optional': true,
+      },
+      paint: { ...text, 'text-color': colors.landmark },
+    },
+    {
+      id: 'pin',
+      type: 'circle',
+      source: SOURCE.pin,
+      paint: {
+        'circle-color': colors.pin,
+        'circle-radius': 9,
+        'circle-stroke-color': colors.halo,
+        'circle-stroke-width': 3,
+      },
+    },
+    // Invisible y ancha: las calles finas se tocan sin puntería (sección 9).
+    {
+      id: STREETS_TOUCH_LAYER,
+      type: 'line',
+      source: SOURCE.streets,
+      paint: { 'line-color': '#000000', 'line-opacity': 0, 'line-width': 28 },
+    },
+  ];
+
   return {
     version: 8,
     glyphs: glyphsUrl(),
-    sources: { sample: { type: 'geojson', data: sampleFeatures() } },
-    layers: [
-      { id: 'land', type: 'background', paint: { 'background-color': colors.land } },
-      {
-        id: 'sample-area',
-        type: 'fill',
-        source: 'sample',
-        filter: ['==', ['geometry-type'], 'Polygon'],
-        paint: { 'fill-color': colors.area, 'fill-outline-color': colors.areaOutline },
-      },
-      {
-        id: 'sample-line',
-        type: 'line',
-        source: 'sample',
-        filter: ['==', ['geometry-type'], 'LineString'],
-        layout: { 'line-cap': 'round' },
-        paint: { 'line-color': colors.line, 'line-width': 8 },
-      },
-      {
-        id: 'sample-point',
-        type: 'circle',
-        source: 'sample',
-        filter: ['==', ['geometry-type'], 'Point'],
-        paint: {
-          'circle-color': colors.point,
-          'circle-radius': 7,
-          'circle-stroke-color': colors.halo,
-          'circle-stroke-width': 2,
-        },
-      },
-      {
-        id: 'sample-area-label',
-        type: 'symbol',
-        source: 'sample',
-        filter: ['==', ['geometry-type'], 'Polygon'],
-        layout: { 'text-field': ['get', 'label'], 'text-font': [FONT_REGULAR], 'text-size': 14 },
-        paint: textPaint,
-      },
-      {
-        id: 'sample-line-label',
-        type: 'symbol',
-        source: 'sample',
-        filter: ['==', ['geometry-type'], 'LineString'],
-        layout: {
-          'symbol-placement': 'line',
-          'text-field': ['get', 'label'],
-          'text-font': [FONT_MEDIUM],
-          'text-size': 15,
-          // Arriba de la línea, para que no se crucen.
-          'text-offset': [0, -1.1],
-        },
-        paint: textPaint,
-      },
-      {
-        id: 'sample-point-label',
-        type: 'symbol',
-        source: 'sample',
-        filter: ['==', ['geometry-type'], 'Point'],
-        layout: {
-          'text-field': ['get', 'label'],
-          'text-font': [FONT_REGULAR],
-          'text-size': 16,
-          'text-anchor': 'top',
-          'text-offset': [0, 1],
-          'text-max-width': 12,
-        },
-        paint: textPaint,
-      },
-    ],
+    sources: {
+      [SOURCE.background]: { type: 'geojson', data: data.background },
+      [SOURCE.barrios]: { type: 'geojson', data: data.barrios },
+      [SOURCE.rail]: { type: 'geojson', data: railFeatures(data) },
+      [SOURCE.barriers]: { type: 'geojson', data: data.barriers },
+      [SOURCE.streets]: { type: 'geojson', data: streetFeatures(data) },
+      [SOURCE.arrows]: { type: 'geojson', data: arrowFeatures(data) },
+      [SOURCE.labels]: { type: 'geojson', data: labelFeatures(data) },
+      [SOURCE.landmarks]: { type: 'geojson', data: landmarkFeatures(data) },
+      [SOURCE.pin]: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
+    },
+    layers,
   };
 }

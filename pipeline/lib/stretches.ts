@@ -480,9 +480,10 @@ export function layoutStreet(
   };
   const { orientation, position, heights, at } = orientByNumbering(segments);
   const positionOf = (n: number) => position.get(n) ?? 0;
+  /** La geometría va al revés de la numeración. */
+  const flipped = (s: GraphSegment) => orientation.get(s)?.start === s.to && s.from !== s.to;
   /** Sentido respecto de la numeración. */
-  const dirOf = (s: GraphSegment): Direction =>
-    orientation.get(s)?.start === s.to && s.from !== s.to ? flip(s.direction) : s.direction;
+  const dirOf = (s: GraphSegment): Direction => (flipped(s) ? flip(s.direction) : s.direction);
   const spanOf = (s: GraphSegment): Span => {
     if (s.range) return s.range;
     const ends = [positionOf(s.from), positionOf(s.to)];
@@ -566,6 +567,7 @@ export function layoutStreet(
         'confirmado',
       );
     const head = group[0] as Unit;
+    const against = all.filter((s) => flipped(s)).map(indexOf);
     stretches.push({
       id: cardIds.direction(code, range),
       segments: all.map(indexOf),
@@ -573,6 +575,7 @@ export function layoutStreet(
       confidence,
       askable: head.askable,
       splitCarriageway: head.split,
+      ...(against.length > 0 ? { against } : {}),
     });
     stretchNodes.push(new Set(group.flatMap((u) => u.nodes)));
   }

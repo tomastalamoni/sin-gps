@@ -24,11 +24,13 @@
     "data:update": "tsx pipeline/update.ts"
   },
   "dependencies": {
+    "dexie": "4.4.7",
     "maplibre-gl": "6.16.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "workbox-window": "7.4.1",
-    "wouter": "3.13.0"
+    "wouter": "3.13.0",
+    "zustand": "5.0.16"
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "4.8.1",
@@ -47,6 +49,7 @@
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-react-refresh": "0.5.7",
+    "fake-indexeddb": "6.2.7",
     "fast-check": "4.10.2",
     "globals": "17.14.0",
     "papaparse": "5.7.0",

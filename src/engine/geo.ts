@@ -101,6 +101,22 @@ export function projectOnLine(p: LngLat, line: readonly LngLat[]): LineProjectio
   return best;
 }
 
+/** Si el punto cae en el polígono: el primer anillo es el borde y los demás, agujeros. */
+export function pointInPolygon(point: LngLat, rings: readonly (readonly LngLat[])[]): boolean {
+  const inside = (ring: readonly LngLat[]) => {
+    let result = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i] as LngLat;
+      const [xj, yj] = ring[j] as LngLat;
+      const crosses = yi > point[1] !== yj > point[1];
+      if (crosses && point[0] < ((xj - xi) * (point[1] - yi)) / (yj - yi) + xi) result = !result;
+    }
+    return result;
+  };
+  const [outer, ...holes] = rings;
+  return outer !== undefined && inside(outer) && !holes.some(inside);
+}
+
 /** Rumbo con el que arranca una línea, medido en sus primeros `lookM` metros. */
 export function startBearing(line: readonly LngLat[], lookM: number): number {
   const first = line[0];

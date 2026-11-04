@@ -4,15 +4,31 @@
  * reporte lo avisa.
  */
 import type { Direction } from '../../src/engine/data';
+import {
+  angleDiff,
+  bearingDeg,
+  lineLengthM,
+  pointAlong,
+  projectOnLine,
+} from '../../src/engine/geo';
 import type { GraphSegment } from '../05-graph';
 import { sideBySide } from './network';
+
+/** Un punto exportado por la app corrige la cuadra de esa calle a menos de esto. */
+const POINT_MATCH_M = 15;
 
 export interface Correction {
   fecha: string;
   codigo: number;
-  desde: number;
-  hasta: number;
+  /** Alturas a corregir, para una corrección escrita a mano. */
+  desde?: number;
+  hasta?: number;
   sentido: 'CRECIENTE' | 'DECRECIENTE' | 'DOBLE';
+  /**
+   * Las que exporta la app: cada cuadra con un punto y el rumbo en que se circula (sin rumbo, doble
+   * mano). Identifican la cuadra aunque no tenga alturas o las alturas se pisen con otra.
+   */
+  tramos?: { punto: [number, number]; rumbo?: number }[];
   nota?: string;
 }
 
@@ -49,18 +65,63 @@ function hasTwoCarriageways(targets: readonly GraphSegment[]): boolean {
   );
 }
 
+/** Cada punto corrige la cuadra de esa calle que pasa por ahí. */
+function applyByPoints(
+  segments: readonly GraphSegment[],
+  correction: Correction,
+  track: NonNullable<Correction['tramos']>,
+  result: CorrectionsResult,
+): void {
+  const own = segments.filter((s) => s.code === correction.codigo);
+  const changes: { segment: GraphSegment; direction: Direction }[] = [];
+  for (const { punto, rumbo } of track) {
+    const nearest = own
+      .map((segment) => ({ segment, ...projectOnLine(punto, segment.line) }))
+      .sort((a, b) => a.distanceM - b.distanceM)[0];
+    if (!nearest || nearest.distanceM > POINT_MATCH_M) {
+      result.unmatched.push(correction);
+      return;
+    }
+    const { segment, alongM } = nearest;
+    let direction: Direction = 'D';
+    if (rumbo !== undefined) {
+      const length = lineLengthM(segment.line);
+      const bearing = bearingDeg(
+        pointAlong(segment.line, Math.max(0, alongM - 5)),
+        pointAlong(segment.line, Math.min(length, alongM + 5)),
+      );
+      direction = Math.abs(angleDiff(bearing, rumbo)) <= 90 ? 'F' : 'B';
+    }
+    changes.push({ segment, direction });
+  }
+  if (changes.every((c) => c.segment.direction === c.direction && isConfirmed(c.segment))) {
+    result.redundant.push(correction);
+    return;
+  }
+  for (const { segment, direction } of changes) {
+    segment.direction = direction;
+    segment.confidence = 'confirmado';
+  }
+  result.applied.push(correction);
+}
+
+function isConfirmed(segment: GraphSegment): boolean {
+  return segment.confidence === 'confirmado';
+}
+
 export function applyCorrections(
   segments: readonly GraphSegment[],
   corrections: readonly Correction[],
 ): CorrectionsResult {
   const result: CorrectionsResult = { applied: [], redundant: [], unmatched: [], refused: [] };
   for (const correction of corrections) {
+    if (correction.tramos) {
+      applyByPoints(segments, correction, correction.tramos, result);
+      continue;
+    }
+    const { desde = 0, hasta = 0 } = correction;
     const targets = segments.filter(
-      (s) =>
-        s.code === correction.codigo &&
-        s.range &&
-        s.range[0] <= correction.hasta &&
-        s.range[1] >= correction.desde,
+      (s) => s.code === correction.codigo && s.range && s.range[0] <= hasta && s.range[1] >= desde,
     );
     if (targets.length === 0) {
       result.unmatched.push(correction);

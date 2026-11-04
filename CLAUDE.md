@@ -5,7 +5,7 @@ PWA offline para aprender las calles, sentidos y alturas del norte de CABA (Reti
 ## Estado
 
 - Fase 0 · Base: cerrada el 3/11/2026 (Tomás la instaló en el iPhone y anduvo en modo avión).
-- Fase actual: 1 · Datos, grafo y Explorar. Bloque A (pipeline, motor y reporte) hecho; esperando el visto bueno de Tomás sobre el reporte antes del bloque B (Explorar).
+- Fase actual: 1 · Datos, grafo y Explorar. Bloques A (pipeline, motor y reporte), B (Explorar) y C (Para verificar, reportes y diagnóstico) hechos. Para cerrar la fase faltan los hechos reales de Tomás y su prueba en el celu.
 - Decisiones de la Fase 1 (3/11/2026): el Barrio 31 queda fuera del mapa; sin Wikidata por ahora (no se muestra el origen del nombre).
 - Publicada en https://tomastalamoni.github.io/sin-gps/ (repo tomastalamoni/sin-gps). Cada push a main pasa la CI y se publica solo, salvo los cambios que tocan únicamente documentación.
 
@@ -20,6 +20,7 @@ PWA offline para aprender las calles, sentidos y alturas del norte de CABA (Reti
 
 - Node 26.13.0 (.nvmrc; ts-fsrs 6 pide 24 o más). TypeScript 6.0.3: typescript-eslint todavía no soporta TS 7.
 - En Git Bash (Windows), `BASE_PATH=/sin-gps/` se convierte en una ruta de disco: anteponer `MSYS_NO_PATHCONV=1`.
+- La ruta #/mapa/lng,lat,zoom abre el mapa en ese punto. Cinco toques en la versión del inicio abren el diagnóstico.
 - test:e2e compila con la base /sin-gps/ y prueba en Chromium (390×844 y 360×800) y en WebKit. Las capturas para la revisión visual quedan en test-results/capturas.
 - Overpass y BA Data rechazan pedidos sin User-Agent; el pipeline se identifica, reintenta y prueba otro servidor (pipeline/config.ts).
 
@@ -31,11 +32,13 @@ PWA offline para aprender las calles, sentidos y alturas del norte de CABA (Reti
 - Las restricciones de giro se validan contra la geometría; las obligatorias exigen reconocer las dos vías, y se descartan las que dejan una esquina sin salida.
 - Lugones y Cantilo son autopista en OSM: quedan como barrera, fuera del Navegante, hasta la Fase 5 (como dice el plan).
 - Un tramo sin alturas toma el sentido de OSM solo si las vías de OSM corren paralelas; si mide menos de 20 m, además tiene que confirmarlo una cuadra vecina de la misma calle.
-- Los tramos de sentido se ordenan por la numeración. Un tramo sin alturas que corre al lado de una cuadra va como ella; si no, sigue a su vecino. Si no queda claro (una rama), no se pregunta.
+- Los tramos de sentido se ordenan por la numeración. Un tramo sin alturas que corre al lado de una cuadra va como ella; si no, sigue a su vecino. Si no queda claro (una rama), no se pregunta. `against` lista las cuadras dibujadas al revés de la numeración: sin eso, una corrección las daría vuelta.
 - Un tramo de sentido no mezcla cuadras que se pueden preguntar con cuadras dudosas o de la zona de borde: se corta ahí, para que una cuadra dudosa no deje sin preguntar al resto de la calle.
 - Dos calzadas con las mismas alturas, sentidos opuestos y lado a lado (hasta 150 m) se preguntan juntas como doble mano, aunque el emparejado de 40 m no las una. Las laterales de mano única al lado de una doble mano, y las cuadras que se contradicen sin correr lado a lado, no se preguntan y van al reporte.
 - Pasar a la otra calzada de una avenida en la misma esquina cuenta como vuelta en U (sección 5): la salida corre a menos de 30 m de la cuadra por la que llegaste.
 - Los patrones de sentido (public/data/patrones.json, de src/engine/patterns.ts) son grupos de 4 o más paralelas que alternan a lo largo de 2 transversales o más, solo con tramos que se pueden preguntar. Se enseñan en la Fase 4.
+- Las correcciones del celu se guardan en Dexie y se aplican sobre los datos al cargar (src/engine/corrections.ts); una versión nueva que ya trae el valor las borra sola. Se exportan para pipeline/overrides.json con el punto y el rumbo de cada cuadra (`tramos`), así no dependen de las alturas ni de las IDs; los nombres y las calles que faltan van como `reportes`.
+- Los hechos reales van en tests/fixtures/hechos-reales.json, con el formato de pipeline/lib/facts.ts. Mientras no exista el archivo, la validación queda pendiente; apenas exista, es bloqueante.
 - El archivo de cambios se calcula contra los datos del último commit (git HEAD) y compara las tarjetas de sentido por geometría, no por ID. Cada versión nueva lleva su archivo, aunque esté vacío. `inherit` va de la ID nueva a la vieja.
 
 ## Reglas

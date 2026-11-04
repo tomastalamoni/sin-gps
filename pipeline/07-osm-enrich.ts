@@ -5,6 +5,7 @@
  * grafo que usa la app.
  */
 import { booleanPointInPolygon, point } from '@turf/turf';
+import { analyzeConnectivity, type Connectivity } from '../src/engine/connectivity';
 import type { DirectionPattern, LandmarkRecord, StreetRecord } from '../src/engine/data';
 import type { LngLat } from '../src/engine/geo';
 import { RoadGraph, type GraphInput } from '../src/engine/graph';
@@ -16,7 +17,7 @@ import type { Numbering } from './02-numbering';
 import type { GraphBuild, GraphSegment } from './05-graph';
 import { buildNames, type NameOverride, type NamesBuild } from './06-names';
 import { BARRIO_DISPLAY_NAMES, IMPORTANCE } from './config';
-import { analyzeConnectivity, computeImportance, type Connectivity } from './lib/analysis';
+import { computeImportance } from './lib/analysis';
 import { activeBarrioFeatures, isActiveBarrio } from './lib/area';
 import {
   areaPolygons,

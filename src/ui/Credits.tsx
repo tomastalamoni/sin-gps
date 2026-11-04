@@ -1,9 +1,17 @@
 const linkClass = 'inline-flex min-h-12 items-center underline underline-offset-2';
 
+interface CreditsProps {
+  className?: string;
+  /** En una sola línea, para el mapa de un celular angosto. */
+  compact?: boolean;
+}
+
 /** Créditos de los datos, siempre visibles (sección 8 del plan). */
-export function Credits({ className = '' }: { className?: string }) {
+export function Credits({ className = '', compact = false }: CreditsProps) {
   return (
-    <p className={`flex flex-wrap justify-center gap-x-4 ${className}`}>
+    <p
+      className={`flex flex-wrap justify-center ${compact ? 'gap-x-2 text-[11px]' : 'gap-x-4'} ${className}`}
+    >
       <a
         className={linkClass}
         href="https://www.openstreetmap.org/copyright"

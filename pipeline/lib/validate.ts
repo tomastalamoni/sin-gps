@@ -2,14 +2,13 @@
  * Validaciones automáticas (sección 8). Las bloqueantes cortan el build: si fallan, no se escriben
  * los datos y la app sigue con la versión anterior.
  */
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { analyzeConnectivity, type Connectivity } from '../../src/engine/connectivity';
 import { RoadGraph, type GraphInput } from '../../src/engine/graph';
 import { TurnTable } from '../../src/engine/turns';
 import type { GraphSegment } from '../05-graph';
 import { VALIDATION } from '../config';
-import { analyzeConnectivity, type Connectivity } from './analysis';
-
-export const FACTS_FILE = 'tests/fixtures/hechos-reales.json';
+import { checkFacts, FACTS_FILE, type Fact, type FactsContext } from './facts';
 
 export interface Check {
   name: string;
@@ -128,7 +127,6 @@ export function runChecks(
   const midBlock = findMidBlockChanges(input, junctions).length;
   const midBlockDoubtful = findMidBlockChanges(input, junctions, true).length - midBlock;
   const percent = (result.ratio * 100).toFixed(2);
-  const hasFacts = existsSync(FACTS_FILE);
   return [
     {
       name: 'Conectividad sobre el grafo con giros',
@@ -158,21 +156,27 @@ export function runChecks(
             detail: `${(osmMatch * 100).toFixed(1)}% de los tramos tienen par; el mínimo es ${VALIDATION.minOsmMatch * 100}%`,
           },
         ]),
-    // Hasta que exista el evaluador (bloque C), un archivo de hechos cargado no puede darse por
-    // bueno: falla. Sin archivo, queda pendiente.
-    hasFacts
-      ? {
-          name: 'Hechos reales confirmados por Tomás',
-          blocking: true,
-          passed: false,
-          detail: 'hay archivo, pero todavía no hay evaluador',
-        }
-      : {
-          name: 'Hechos reales confirmados por Tomás',
-          blocking: false,
-          passed: false,
-          pending: true,
-          detail: 'todavía no hay archivo',
-        },
   ];
+}
+
+/** Los hechos que confirmó Tomás: mientras no estén cargados, queda pendiente. */
+export function factsCheck(context: FactsContext): Check {
+  const name = 'Hechos reales confirmados por Tomás';
+  if (!existsSync(FACTS_FILE)) {
+    return {
+      name,
+      blocking: false,
+      passed: false,
+      pending: true,
+      detail: 'todavía no hay archivo',
+    };
+  }
+  const facts = JSON.parse(readFileSync(FACTS_FILE, 'utf8')) as Fact[];
+  const { total, failures } = checkFacts(facts, context);
+  return {
+    name,
+    blocking: true,
+    passed: failures.length === 0,
+    detail: `${String(total - failures.length)} de ${String(total)}${failures.length > 0 ? `; ${failures.join('; ')}` : ''}`,
+  };
 }

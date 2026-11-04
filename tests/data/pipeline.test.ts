@@ -167,6 +167,61 @@ describe('calzadas separadas', () => {
     expect([first.direction, second.direction]).toEqual(['B', 'B']);
   });
 
+  it('una corrección exportada se aplica por sus puntos, tenga alturas o no', () => {
+    const noHeights = segment(0, 1, [at(0, 0), at(100, 0)], 'F', { confidence: 'en-duda' });
+    const crossing = segment(1, 2, [at(100, 0), at(100, 100)], 'F', { code: 301 });
+    const result = applyCorrections(
+      [noHeights, crossing],
+      [
+        {
+          fecha: '2026-11-03',
+          codigo: 300,
+          sentido: 'CRECIENTE',
+          // Se circula hacia el oeste: contra la geometría.
+          tramos: [{ punto: [...at(50, 0)], rumbo: 270 }],
+        },
+      ],
+    );
+    expect(result.applied).toHaveLength(1);
+    expect(noHeights).toMatchObject({ direction: 'B', confidence: 'confirmado' });
+    expect(crossing.direction).toBe('F');
+  });
+
+  it('una corrección por puntos elige la calzada que pasa por ahí', () => {
+    const north = segment(0, 1, [at(0, 20), at(100, 20)], 'F');
+    const south = segment(2, 3, [at(0, 0), at(100, 0)], 'B');
+    const result = applyCorrections(
+      [north, south],
+      [
+        {
+          fecha: '2026-11-03',
+          codigo: 300,
+          sentido: 'DOBLE',
+          tramos: [{ punto: [...at(50, 0)] }],
+        },
+      ],
+    );
+    expect(result.applied).toHaveLength(1);
+    expect([north.direction, south.direction]).toEqual(['F', 'D']);
+  });
+
+  it('una corrección por puntos que no encuentra su cuadra no aplica nada', () => {
+    const block = segment(0, 1, [at(0, 0), at(100, 0)], 'F');
+    const result = applyCorrections(
+      [block],
+      [
+        {
+          fecha: '2026-11-03',
+          codigo: 300,
+          sentido: 'DOBLE',
+          tramos: [{ punto: [...at(50, 0)] }, { punto: [...at(50, 500)] }],
+        },
+      ],
+    );
+    expect(result.unmatched).toHaveLength(1);
+    expect(block.direction).toBe('F');
+  });
+
   it('DOBLE no depende de cómo se orientó la cuadra; CRECIENTE sí', () => {
     const guessed = () =>
       segment(0, 1, [at(0, 0), at(100, 0)], 'F', {

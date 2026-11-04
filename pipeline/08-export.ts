@@ -135,7 +135,7 @@ export function exportData(inputs: ExportInputs): ExportResult {
   const streetsFile: StreetsFile = { format: DATA_FORMAT, version, streets: model.streets };
   const landmarksFile: LandmarksFile = { format: DATA_FORMAT, version, landmarks: model.landmarks };
   const patternsFile: PatternsFile = { format: DATA_FORMAT, version, patterns: model.patterns };
-  const railFile: RailFile & { unnamed: number[][] } = {
+  const railFile: RailFile = {
     format: DATA_FORMAT,
     version,
     lines: model.rail.lines,
@@ -345,7 +345,8 @@ function buildReport(
   out(
     `- Aplicadas: ${corrections.applied.length} · ya coincidían (se pueden borrar): ${corrections.redundant.length} · sin tramo: ${corrections.unmatched.length} · rechazadas: ${corrections.refused.length}`,
   );
-  const describe = (c: Correction) => `${nameOf(c.codigo)} ${c.desde}-${c.hasta} (${c.fecha})`;
+  const describe = (c: Correction) =>
+    `${nameOf(c.codigo)}${c.desde === undefined ? '' : ` ${String(c.desde)}-${String(c.hasta)}`} (${c.fecha})`;
   for (const c of corrections.redundant) out(`- Ya coincide: ${describe(c)}`);
   for (const c of corrections.unmatched) out(`- No encontré el tramo: ${describe(c)}`);
   for (const r of corrections.refused) out(`- Rechazada: ${describe(r.correction)}: ${r.reason}`);

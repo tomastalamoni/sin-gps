@@ -116,8 +116,12 @@ export interface DirectionStretch {
   askable: boolean;
   /** Se pregunta junto con la otra calzada como "doble mano (calzadas separadas)". */
   splitCarriageway: boolean;
+  /** Tramos dibujados al revés de la numeración: solo los que no tienen alturas pueden estarlo. */
+  against?: number[];
   /** Código de la calle donde termina el tramo porque cambia el sentido. */
   changesAt?: number;
+  /** Lo corrigió Tomás: vive solo en el celu, no en los archivos de datos. */
+  corrected?: boolean;
 }
 
 export interface StreetRecord {
@@ -211,6 +215,8 @@ export interface RailFile {
   format: number;
   version: string;
   lines: RailLine[];
+  /** Vías sin nombre (ramales y playas): se dibujan, pero no se preguntan. */
+  unnamed: number[][];
 }
 
 export interface MetaFile {
