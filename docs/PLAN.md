@@ -496,7 +496,7 @@ La fuente principal es el callejero oficial de la Ciudad (BA Data), que trae cua
 10. **Hitos:** candidatos de OSM por categoría (estaciones de tren y subte, hospitales, plazas y parques con nombre, estadios, shoppings, universidades, museos grandes, Aeroparque, monumentos). Se eligen unos 150 por tamaño, tipo y cercanía a avenidas. En `pipeline/hitos-override.json` cada hito tiene un `slug` fijo y su `acceso`: de 1 a 3 cuadras manejables a menos de 150 m. Sin acceso, no es destino del Navegante.
 11. **IDs estables y cambios:**
     - IDs tipadas: `N:código` (nombre), `S:código:alturas` (sentido), `A:código:mil` (alturas), `T:código:dirección:primer cruce` (transversales), `B:barrera:tramo` (cruce), `H:slug` (hito) y `Z:barrio` (barrio).
-    - Cada regeneración produce `changes-{versión anterior}-{nueva}.json`. Un tramo que conserva su sentido mantiene el estado de su tarjeta aunque cambie su rango de alturas; uno que cambió de sentido reinicia su tarjeta y genera una lección "cambió".
+    - Cada regeneración produce `cambios-{versión anterior}-{nueva}.json`. Un tramo que conserva su sentido mantiene el estado de su tarjeta aunque cambie su rango de alturas; uno que cambió de sentido reinicia su tarjeta y genera una lección "cambió".
     - La app aplica ese archivo al actualizar los datos y al importar un respaldo viejo.
 12. **Validar** con los chequeos de la tabla de validaciones. Si algo falla, el build se corta.
 13. **Exportar** archivos compactos para la app (coordenadas con 6 decimales), `meta.json` con la fecha de cada fuente y `reporte.md` con conteos, discrepancias y advertencias.
@@ -641,7 +641,7 @@ Para dibujar, los tramos se agrupan en secciones (calle + sentido) y la geometr�
 
 ## 10. Calidad: pruebas y verificación
 
-Cada fase se cierra solo si pasan cinco controles: tests del motor, validación de datos, pruebas en celulares emulados, revisión visual y hechos reales confirmados por Tomás.
+Cada fase se cierra solo si pasan cinco controles: tests del motor, validación de datos, pruebas en celulares emulados, revisión visual y los hechos reales que Tomás haya confirmado.
 
 | Control | Qué cubre | Herramienta | Cuándo corre |
 | --- | --- | --- | --- |
@@ -672,7 +672,7 @@ Corren en dos tamaños de celular emulado (390 × 844 y 360 × 800): primer uso 
 
 ### Hechos reales
 
-Antes de cerrar la fase 1, Tomás anota de 20 a 30 datos que conoce o verifica en la calle: sentidos cerca de su casa y su trabajo, alturas de esquinas conocidas, de qué lado quedan los pares, cruces de vías (incluidos tres bajo el Viaducto Mitre) y el rumbo de algunas calles. Se guardan en `tests/fixtures/hechos-reales.json` y tienen que dar 100%. Cada error que aparezca después se suma a esa lista.
+Tomás todavía no conoce las calles, así que la lista empieza vacía. *Decidido el 4/11/2026: la fase 1 se cerró sin hechos reales.* Cada diferencia que vea en la calle la reporta desde la app y se suma a `tests/fixtures/hechos-reales.json`: un sentido, la altura de una esquina, de qué lado quedan los pares, un cruce de vías o el rumbo de una calle. Mientras el archivo no exista, este control queda pendiente; apenas exista, tiene que dar 100%.
 
 ### Checklist en el celular al cerrar cada fase
 
@@ -713,7 +713,7 @@ Los plazos dependen del ritmo de prueba de Tomás, así que la hoja de ruta fija
    - Motor de grafo: `graph.ts`, `turns.ts`, `router.ts` y `addresses.ts`. El pipeline los necesita para la conectividad y la importancia.
    - Explorar: mapa con calles, flechas, hitos, vías y límites; ficha de calle; buscador de calles, direcciones, esquinas e hitos.
    - Lista "Para verificar", reportes de datos y pantalla oculta de diagnóstico.
-   - **Pasa cuando** el reporte no tiene fallas bloqueantes y los hechos reales de Tomás dan 100%, o quedan corregidos.
+   - **Pasa cuando** el reporte no tiene fallas bloqueantes y Tomás la prueba en el celular. *Cerrada el 4/11/2026, sin hechos reales (sección 10).*
 3. **Fase 2 · Aprender**
    - Motor de repetición espaciada (ts-fsrs, notas automáticas, sesiones), lecciones, diagnóstico y simulación de carga.
    - Modos Repaso del día, ¿Cómo se llama?, Encontrala, Sentidos (con la variante de 4 paralelas), Hitos y barrios, y Cruces de vías.
@@ -808,7 +808,8 @@ El mayor riesgo es aprender un dato mal, por eso casi todas las defensas apuntan
 | Sentidos desactualizados o mal cargados | Aprender algo mal | Dos fuentes cruzadas, estados de confianza (lo dudoso no se pregunta), lista "Para verificar", correcciones de Tomás, actualización semestral y archivo de cambios |
 | Avenidas con calzadas separadas mal interpretadas | Enseñar "mano única" donde hay doble mano | Cruce con OSM por superposición y marca `dividida` |
 | Cuadras del callejero que no comparten esquina | Rutas imposibles o esquinas sin opciones | Partir tramos en las uniones en T, chequeo de conectividad sobre el grafo con giros y plan B con la topología de OSM |
-| Cambios recientes en la ciudad (viaductos, sentidos nuevos) | Enseñar barreras o sentidos que ya no existen | Cruces de vías calculados desde OSM, hechos reales de Tomás y actualización semestral |
+| Cambios recientes en la ciudad (viaductos, sentidos nuevos) | Enseñar barreras o sentidos que ya no existen | Cruces de vías calculados desde OSM, reportes de Tomás y actualización semestral |
+| Datos sin comparar con la calle: la fase 1 se cerró sin hechos reales | Si las dos fuentes se equivocan en una cuadra, se aprende mal | Reportes de Tomás cuando ve una diferencia; cada uno se suma a los hechos reales |
 | No hay datos de flechas de giro en los semáforos | Castigar un giro permitido o aceptar uno prohibido | Giros condicionales sin penalización; la ruta óptima los evita y Esquinas no pregunta por ellos |
 | Restricciones de giro incompletas en OSM | Permitir algo prohibido | Se usan como extra y la app recuerda respetar siempre la señalización |
 | Mapa lento en celulares modestos | Mala experiencia | Agrupar tramos y simplificar geometría; plan B con PMTiles |
@@ -823,7 +824,10 @@ El mayor riesgo es aprender un dato mal, por eso casi todas las defensas apuntan
 - [x] Repositorio público con GitHub Pages, o privado con Cloudflare Pages o Netlify. *Decidido el 2/11/2026: público con GitHub Pages.*
 - [x] iPhone o Android, para priorizar las pruebas de instalación. *Decidido el 2/11/2026: iPhone.*
 - [ ] Nombre definitivo de la app.
-- [ ] Si el callejero resulta mal conectado, usar la topología de OSM (se decide con el reporte de la fase 1).
+- [x] Si el callejero resulta mal conectado, usar la topología de OSM (se decide con el reporte de la fase 1). *Resuelto con ese reporte: la conectividad da 98,35%, no hace falta.*
+- [x] Barrio 31. *Decidido el 3/11/2026: queda fuera del mapa.*
+- [x] Origen del nombre. *Decidido el 3/11/2026: sin Wikidata por ahora, no se muestra.*
+- [x] Hechos reales. *Decidido el 4/11/2026: Tomás todavía no conoce las calles; la lista empieza vacía y se llena con sus reportes (sección 10).*
 
 ## Fuentes
 

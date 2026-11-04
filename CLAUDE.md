@@ -5,7 +5,8 @@ PWA offline para aprender las calles, sentidos y alturas del norte de CABA (Reti
 ## Estado
 
 - Fase 0 · Base: cerrada el 3/11/2026 (Tomás la instaló en el iPhone y anduvo en modo avión).
-- Fase actual: 1 · Datos, grafo y Explorar. Bloques A (pipeline, motor y reporte), B (Explorar) y C (Para verificar, reportes y diagnóstico) hechos. Para cerrar la fase faltan los hechos reales de Tomás y su prueba en el celu.
+- Fase 1 · Datos, grafo y Explorar: cerrada el 4/11/2026 (Tomás la probó en el iPhone y anduvo todo). Se cerró sin hechos reales: Tomás todavía no conoce las calles, así que nada se comparó con la calle y no hay que pedirle datos de memoria.
+- Fase actual: 2 · Aprender, sin arrancar: espera el OK de Tomás y empieza en modo plan.
 - Decisiones de la Fase 1 (3/11/2026): el Barrio 31 queda fuera del mapa; sin Wikidata por ahora (no se muestra el origen del nombre).
 - Publicada en https://tomastalamoni.github.io/sin-gps/ (repo tomastalamoni/sin-gps). Cada push a main pasa la CI y se publica solo, salvo los cambios que tocan únicamente documentación.
 
@@ -38,7 +39,7 @@ PWA offline para aprender las calles, sentidos y alturas del norte de CABA (Reti
 - Pasar a la otra calzada de una avenida en la misma esquina cuenta como vuelta en U (sección 5): la salida corre a menos de 30 m de la cuadra por la que llegaste.
 - Los patrones de sentido (public/data/patrones.json, de src/engine/patterns.ts) son grupos de 4 o más paralelas que alternan a lo largo de 2 transversales o más, solo con tramos que se pueden preguntar. Se enseñan en la Fase 4.
 - Las correcciones del celu se guardan en Dexie y se aplican sobre los datos al cargar (src/engine/corrections.ts); una versión nueva que ya trae el valor las borra sola. Se exportan para pipeline/overrides.json con el punto y el rumbo de cada cuadra (`tramos`), así no dependen de las alturas ni de las IDs; los nombres y las calles que faltan van como `reportes`.
-- Los hechos reales van en tests/fixtures/hechos-reales.json, con el formato de pipeline/lib/facts.ts. Mientras no exista el archivo, la validación queda pendiente; apenas exista, es bloqueante.
+- Los hechos reales van en tests/fixtures/hechos-reales.json, con el formato de pipeline/lib/facts.ts. La lista empieza vacía: cada error que Tomás reporte desde la calle se suma ahí. Mientras no exista el archivo, la validación queda pendiente; apenas exista, es bloqueante.
 - El archivo de cambios se calcula contra los datos del último commit (git HEAD) y compara las tarjetas de sentido por geometría, no por ID. Cada versión nueva lleva su archivo, aunque esté vacío. `inherit` va de la ID nueva a la vieja.
 
 ## Reglas
