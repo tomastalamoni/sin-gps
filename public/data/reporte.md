@@ -1,6 +1,6 @@
-# Reporte de datos · 2026-11-03.e001b1ac
+# Reporte de datos · 2026-11-03.040f74aa
 
-Generado el 2026-11-03 con el callejero de BA Data y OpenStreetMap.
+Generado el 2026-11-04 con el callejero de BA Data y OpenStreetMap.
 
 ## Validaciones
 
@@ -26,7 +26,7 @@ Generado el 2026-11-03 con el callejero de BA Data y OpenStreetMap.
 | --- | --- |
 | tramos.json | 615 |
 | grafo.json | 108 |
-| calles.json | 840 |
+| calles.json | 841 |
 | patrones.json | 12 |
 | hitos.json | 26 |
 | vias.json | 40 |
@@ -34,7 +34,8 @@ Generado el 2026-11-03 con el callejero de BA Data y OpenStreetMap.
 | fondo.json | 222 |
 | barrios.json | 33 |
 | LICENCIAS.txt | 1 |
-| **Total** | **1958** |
+| cambios-2026-11-03.e001b1ac-2026-11-03.040f74aa.json | 0 |
+| **Total** | **1959** |
 
 ## Conectividad y trampas
 
@@ -379,7 +380,7 @@ Grupos de paralelas que alternan sentido, de 4 o más, a lo largo de 2 transvers
 
 ## Cambios desde la versión anterior
 
-Es la primera versión: no hay archivo de cambios.
+Desde 2026-11-03.e001b1ac: ninguna tarjeta cambió (el archivo de cambios va vacío).
 
 ## Pendientes
 
